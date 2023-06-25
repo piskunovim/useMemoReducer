@@ -4,14 +4,14 @@ import { disconnectObserver } from './DisconnectObserver';
 import { connect, disconnect, getConnectionName, isDevtoolsExist, isEnabled } from './helpers';
 import { ReduxDevtoolsExtension } from './models';
 
-type ReturnType = { devtoolsEnabled: () => boolean; dispatchToDevtools?: <T>(action: T) => void };
+type ReturnType<A> = { devtoolsEnabled: () => boolean; dispatchToDevtools?: (action: A) => void };
 
 const useReduxDevtools = <S, A>(
   reducer: Reducer<S, A>,
   initialState: S,
   connectionName: string,
   devtoolsExist: boolean | ReduxDevtoolsExtension,
-): ReturnType => {
+): ReturnType<A> => {
   const devtoolsReducerRef = useRef(reducer(initialState, { type: '@@INIT' } as unknown as A));
   const connection = useMemo(
     () => (devtoolsExist ? connect(connectionName, devtoolsReducerRef.current) : null),
@@ -57,7 +57,7 @@ const useReduxDevtools = <S, A>(
   }, [connectionName, subscribe]);
 
   const dispatchToDevtools = useCallback(
-    (action) => {
+    (action: A) => {
       devtoolsReducerRef.current = reducer(devtoolsReducerRef.current, action);
       connection?.send(action, devtoolsReducerRef.current);
     },
@@ -71,7 +71,7 @@ const useReduxDevtools = <S, A>(
   return useMemo(() => ({ devtoolsEnabled, dispatchToDevtools }), [devtoolsEnabled, dispatchToDevtools]);
 };
 
-export const useCreateReduxDevtools = <S, A>(reducer: Reducer<S, A>, initialState: S): ReturnType => {
+export const useCreateReduxDevtools = <S, A>(reducer: Reducer<S, A>, initialState: S): ReturnType<A> => {
   const memoizedInitialState = useRef(initialState);
   const connectionName = useMemo(() => getConnectionName(), []);
 

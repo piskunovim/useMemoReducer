@@ -1,7 +1,7 @@
 import React from 'react';
-import { fireEvent, render, act } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import { useMemoReducer } from '../src';
-import { DefaultTestComponent, Action } from './defaultComponent';
+import { DefaultTestComponent } from './defaultComponent';
 
 describe('useMemoReducer', () => {
   test('it should initialize with correct initial state', () => {

@@ -22,7 +22,7 @@ const ThunksTestComponent = () => {
   );
 };
 
-describe('fetchDataThunk', () => {
+describe('thunks', () => {
   let fetchMock: jest.Mock;
 
   beforeEach(() => {
