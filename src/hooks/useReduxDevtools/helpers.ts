@@ -1,6 +1,11 @@
 import { REDUX_DEVTOOLS_KEY } from './constants';
 import { disconnectObserver } from './DisconnectObserver';
-import { ReduxDevtoolsExtension, ReduxDevtoolsExtensionConnection, WindowWithDevTools } from './models';
+import {
+  ReduxDevtoolsExtension,
+  ReduxDevtoolsExtensionConnection,
+  WindowWithDevTools,
+  UseMemoReducerOptions,
+} from './models';
 
 const getDevtoolsExtenstion = (arg: Window | WindowWithDevTools): false | ReduxDevtoolsExtension =>
   REDUX_DEVTOOLS_KEY in arg && (arg as WindowWithDevTools)[REDUX_DEVTOOLS_KEY];
@@ -39,19 +44,17 @@ const parseConnectionName = (connectionName: string): [string, number] => {
   return [name, number - 1];
 };
 
-export const getConnectionName = (): string => {
-  try {
-    const moduleStr = getStackTrace().split('\n')[9];
-    const moduleName = moduleStr.trim().split(' ')[1];
-
-    const connectionsByName = connections.get(moduleName) ?? [];
-    const currentVersion = connectionsByName.length > 0 ? connectionsByName.length + 1 : 1;
-
-    return `${moduleName}/${currentVersion}`;
-  } catch (e) {
-    // Now the useReduxDevtools works only for crome-extension
+export const getConnectionName = (options?: UseMemoReducerOptions): string => {
+  if (!options?.devtoolsName) {
     return '';
   }
+
+  const devtoolsName = options.devtoolsName.toLowerCase();
+
+  const connectionsByName = connections.get(devtoolsName) ?? [];
+  const currentVersion = connectionsByName.length > 0 ? connectionsByName.length + 1 : 1;
+
+  return `${devtoolsName}/${currentVersion}`;
 };
 
 const removeConnection = (connectionName: string): void => {

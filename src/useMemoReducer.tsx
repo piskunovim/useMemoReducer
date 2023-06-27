@@ -5,8 +5,12 @@ import { useCreateReduxDevtools } from './hooks/useReduxDevtools/useReduxDevtool
 import { Dispatch, ThunkAction, Subscriber, Subscribers, UseSelector } from './models';
 import { isThunk } from './helpers';
 
-export const useMemoReducer = <S, A>(reducer: Reducer<S, A>, initialState: S): [UseSelector<S>, Dispatch<S, A>] => {
-  const devtools = useCreateReduxDevtools(reducer, initialState);
+export const useMemoReducer = <S, A, O>(
+  reducer: Reducer<S, A>,
+  initialState: S,
+  options?: O,
+): [UseSelector<S>, Dispatch<S, A>] => {
+  const devtools = useCreateReduxDevtools(reducer, initialState, options);
   const [store, dispatch] = useReducer(reducer, initialState);
 
   const devtoolsRef = useRef(devtools);

@@ -1,6 +1,6 @@
 {
   "name": "use-memo-reducer",
-  "version": "0.5.0",
+  "version": "0.7.0",
   "description": "A custom React hook for memoized reducers",
   "main": "dist/index.js",
   "scripts": {
