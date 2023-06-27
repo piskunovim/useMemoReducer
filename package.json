@@ -1,17 +1,25 @@
 {
   "name": "use-memo-reducer",
-  "version": "0.1.0",
-  "description": "",
+  "version": "0.5.0",
+  "description": "A custom React hook for memoized reducers",
   "main": "dist/index.js",
   "scripts": {
     "build": "rollup -c",
     "test": "jest"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["react", "hooks", "reducer", "memo"],
+  "author": "Igor Piskunov",
   "license": "MIT",
   "jest": {
-    "testEnvironment": "jsdom"
+    "testEnvironment": "jsdom",
+    "collectCoverage": true,
+    "coverageReporters": ["json", "lcov"],
+    "coveragePathIgnorePatterns": [
+      "src/hooks/useReduxDevtools"
+    ]
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0"
   },
   "devDependencies": {
     "@babel/core": "^7.22.5",
