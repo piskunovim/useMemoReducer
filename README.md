@@ -18,7 +18,7 @@
 
 - 🔧 **Debugging with Redux DevTools**: Gain insights into the state flow by integrating `useMemoReducer`with Redux DevTools. Simply assign meaningful names to your connections, and delve into state transitions, actions, and timelines, all at your fingertips.
 
-Harness the full potential of `useMemoReducer` to build scalable, efficient, and maintainable React applications.
+Harness the full potential of `useMemoReducer` to build scalable, efficient, and maintainable React applications. [Comparison with Redux and useReducer](https://github.com/piskunovim/useMemoReducer#-benchmark-results).
 
 ## Installation
 
@@ -279,5 +279,50 @@ function useMemoReducer<S, A, O>(
 - **`S`**: The type of state used by the reducer.
 - **`A`**: The type of actions that can be dispatched to the reducer.
 - **`O`**: The type representing the options for the hook, such as `{ devtoolsName }`.
+
+## 📊 Benchmark Results
+This section contains the benchmark results of three different state management approaches: `useMemoReducer`, `useReducer`, and `Redux`. The results were obtained using [Benchmark.js](https://benchmarkjs.com/).
+
+> ⚠️ **Disclaimer Regarding Benchmark Results.**
+> Please be aware that the benchmark results reported by this tool can vary depending on several factors including, but not limited to, hardware specifications, operating system, running background processes, browser or Node.js version, and device load. 
+
+#### [Benchmark Repository](https://github.com/piskunovim/performance-analysis-useMemoReducer)
+
+### Test Case: Simple Counter
+
+| Library            | Ops/sec           | Sample Size | Error       |
+| ------------------ | ----------------- | ----------- | ----------- |
+| **useMemoReducer** | **3,841 ops/sec** | **78 runs** | **±10.44%** |
+| useReducer         | 2,694 ops/sec     | 63 runs     | ±29.91%     |
+| Redux              | 97.85 ops/sec     | 24 runs     | ±24.43%     |
+
+🏆 **Fastest Library:** `useMemoReducer`
+
+### Test Case: List Rendering
+
+| Library            | Ops/sec           | Sample Size | Error       |
+| ------------------ | ----------------- | ----------- | ----------- |
+| **useMemoReducer** | **4,555 ops/sec** | **74 runs** | **±12.70%** |
+| useReducer         | 2,402 ops/sec     | 49 runs     | ±41.13%     |
+| Redux              | 26.13 ops/sec     | 10 runs     | ±62.17%     |
+
+🏆 **Fastest Library:** `useMemoReducer`
+
+### Test Case: Complex State
+
+| Library            | Ops/sec           | Sample Size | Error       |
+| ------------------ | ----------------- | ----------- | ----------- |
+| **useMemoReducer** | **4,347 ops/sec** | **77 runs** | **±12.51%** |
+| useReducer         | 2,505 ops/sec     | 51 runs     | ±40.21%     |
+| Redux              | 141 ops/sec       | 24 runs     | ±24.71%     |
+
+🏆 **Fastest Library:** `useMemoReducer`
+
+[Benchmark Repository](https://github.com/piskunovim/performance-analysis-useMemoReducer)
+
+##  Contributors 👥
+
+- [Vladimir Grigoryev](https://github.com/VladimirGr)
+
 
 Remember, regardless hook introduces bunch of optimisation and performance abilities the final user of the hook is a developer. Use this hook judiciously
