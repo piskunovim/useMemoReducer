@@ -1,8 +1,9 @@
 {
   "name": "use-memo-reducer",
-  "version": "0.7.0",
+  "version": "0.7.2",
   "description": "A custom React hook for memoized reducers",
   "main": "dist/index.js",
+  "repository": "github:piskunovim/useMemoReducer",
   "scripts": {
     "build": "rollup -c",
     "test": "jest"
@@ -10,6 +11,10 @@
   "keywords": ["react", "hooks", "reducer", "memo"],
   "author": "Igor Piskunov",
   "license": "MIT",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "jest": {
     "testEnvironment": "jsdom",
     "collectCoverage": true,

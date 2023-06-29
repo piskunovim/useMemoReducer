@@ -6,19 +6,10 @@
 
 ## Overview
 
-`useMemoReducer` is a custom React hook that provides an optimized way to manage the state within a React component, similar to how `useReducer` works, but with integrated support for memoization, performance optimization, and debugging capabilities through Redux DevTools.
+`useMemoReducer` is a React hook engineered to efficiently manage state within a **React Context** by decoupling state updates in your module from the Context's child re-rendering.
 
-## Features 
+Its usage closely mirrors that of `useReducer`, but additionally supports **thunks** and integrates seamlessly with **Redux DevTools** for enhanced debugging.
 
-- 🚀 **Performance Optimization**: `useMemoReducer` leverages memoization to optimize your component's performance, ensuring re-renders only occur when selected state segments change.
-
-- 🧩 **Thunk Integration**: Enhance your state management by utilizing thunks with `useMemoReducer`. This integration allows for more complex and asynchronous actions, providing greater flexibility and control.
-
-- ⚡ **Empowered React Context**: `useMemoReducer` truly shines when integrated with React Context. It enables you to create compact, isolated yet robustly managed state stores, optimizing state handling within your React applications.
-
-- 🔧 **Debugging with Redux DevTools**: Gain insights into the state flow by integrating `useMemoReducer`with Redux DevTools. Simply assign meaningful names to your connections, and delve into state transitions, actions, and timelines, all at your fingertips.
-
-Harness the full potential of `useMemoReducer` to build scalable, efficient, and maintainable React applications. [Comparison with Redux and useReducer](https://github.com/piskunovim/useMemoReducer#-benchmark-results).
 
 ## Installation
 
@@ -26,19 +17,142 @@ Harness the full potential of `useMemoReducer` to build scalable, efficient, and
 npm install use-memo-reducer
 ```
 
-## Usage
-
-### Step 1: Import `useMemoReducer`
-
-Import `useMemoReducer` into the file where you want to use it.
+Import:
 
 ```javascript
 import { useMemoReducer } from 'use-memo-reducer';
 ```
 
-### Step 2: Use `useMemoReducer` in your component
+## What are you getting?
 
-Here is an example that demonstrates how to use `useMemoReducer` within a functional component.
+🎯 **Scoped React Context**: Utilize a React context with a state that is readily available to all its children using a `useSelector()`.
+
+⚡ **Optimized Rendering**: The state change does not trigger a re-render of all children components, but only those in which the state actually changed, ensuring optimal performance.
+
+⚙️ **Support for Thunks**: Leverage thunks for more intricate and asynchronous actions, adding depth to your state management.
+
+♻️ **Reusable Store**: It’s highly reusable - the store service you've implemented can be effortlessly reused as many times as you wish across different parts of your application, promoting consistency and DRY (Don't Repeat Yourself) principles.
+
+🔍 **Debugging with Redux DevTools**: Gain insights into the state flow by integrating `useMemoReducer`with Redux DevTools. Simply assign meaningful names to your connections, and delve into state transitions, actions, and timelines, all at your fingertips.
+
+Harness the full potential of `useMemoReducer` to build scalable, efficient, and maintainable React applications. [Comparison with Redux and useReducer](https://github.com/piskunovim/useMemoReducer#-benchmark-results).
+
+
+## Getting Started
+
+Let's create a simple application that will use **React Context** and `useMemoReducer` and will show how child optimised rerendering does work. 
+
+<img alt="useMemoReducer usage demo" src="https://github.com/piskunovim/useMemoReducer/blob/main/media/demo.gif?raw=true" width="700px" />
+
+Traditionally, React Contexts have had a reputation for being cumbersome when it comes to state storage, mainly due to the challenges in optimizing providers to prevent unnecessary re-renders upon state changes. `useMemoReducer` paves the way for a solution to this issue.
+
+Imagine that we are building a simple counter, and we wish to create a service that allows incrementing and decrementing a value within the state.
+
+```javascript
+import React, {
+  createContext,
+  useContext,
+  useCallback,
+  useMemo,
+  memo,
+} from "react";
+import { useMemoReducer } from "use-memo-reducer";
+
+export const CounterServiceContext = createContext({});
+
+export const useCounterService = () => useContext(CounterServiceContext);
+
+const counterReducer = (state, action) => {
+  switch (action.type) {
+    case "increment":
+      return { count: state.count + 1 };
+    case "decrement":
+      return { count: state.count - 1 };
+    default:
+      return state;
+  }
+};
+
+export const CounterService = memo(({ children }) => {
+  const [useSelector, dispatch] = useMemoReducer(counterReducer, { count: 0 });
+
+  const decrement = useCallback(
+    () => dispatch({ type: "decrement" }),
+    [dispatch]
+  );
+  const increment = useCallback(() => {
+    dispatch({ type: "increment" });
+  }, [dispatch]);
+
+  const contextValues = useMemo(
+    () => ({
+      useSelector,
+      decrement,
+      increment,
+    }),
+    []
+  );
+
+  return (
+    <CounterServiceContext.Provider value={contextValues}>
+      {children}
+    </CounterServiceContext.Provider>
+  );
+});
+```
+
+Notably, the service is memoized is memoized to optimize performance by avoiding unnecessary re-renders. `useMemoReducer` seamlessly handles the orchestration of re-rendering processes. All that’s required on your end is to retrieve the `useSelector` from the context hook within the necessary React component, and then pass the selector to it, akin to the familiar workflow with Redux.
+
+```javascript
+const Counter = () => {
+  const { useSelector } = useCounterService();
+
+  const count = useSelector((state) => state.count);
+
+  return <span>{count}</span>;
+};
+
+const ActionButtons = () => {
+  const { decrement, increment } = useCounterService();
+
+  return (
+    <>
+      <button onClick={decrement}>-</button>
+      <button onClick={increment}>+</button>
+    </>
+  );
+};
+```
+
+Let’s integrate this in the counter component.
+
+```javascript
+const CounterComponent = () => (
+  <CounterService>
+    <Counter />
+    <ActionButtons />
+  </CounterService>
+);
+```
+
+What we've achieved here is the creation of a localized store dedicated to a set of components. But what’s even more impressive is the scalability: should you need multiple counters on a single page, simply instantiate this component multiple times. Each counter will maintain its distinct state and independent logic, providing an autonomous ecosystem for each instance.
+
+```javascript
+const MainComponent = () => (
+  <>
+    <CounterComponent />
+    <CounterComponent />
+  </>
+);
+
+createRoot(document.getElementById("app-init")).render(<MainComponent />);
+```
+
+This methodology unlocks boundless possibilities for ingenuity and experimentation in your development process.
+
+### Simple component
+
+Here is an example that demonstrates how to use `useMemoReducer` within a simple functional component.
 
 ```javascript
 import React from 'react';
@@ -136,116 +250,6 @@ const CounterComponent = () => {
 
 export default CounterComponent;
 ```
-
-## Contexts
-
-One of the standout applications of `useMemoReducer` lies in enhancing React Contexts for state management. Traditionally, React Contexts have had a reputation for being cumbersome when it comes to state storage, mainly due to the challenges in optimizing providers to prevent unnecessary re-renders upon state changes.
-
-However, `useMemoReducer` paves the way for a solution to this issue, empowering you to craft highly efficient and versatile state management services.
-
-Let’s illustrate this with an example. Imagine that we are building a simple counter, and we wish to create a service that allows incrementing and decrementing a value within the state.
-
-```javascript
-import React, {
-  createContext,
-  useContext,
-  useCallback,
-  useMemo,
-  memo,
-} from "react";
-import { useMemoReducer } from "use-memo-reducer";
-
-export const CounterServiceContext = createContext({});
-
-export const useCounterService = () => useContext(CounterServiceContext);
-
-const counterReducer = (state, action) => {
-  switch (action.type) {
-    case "increment":
-      return { count: state.count + 1 };
-    case "decrement":
-      return { count: state.count - 1 };
-    default:
-      return state;
-  }
-};
-
-export const CounterService = memo(({ children }) => {
-  const [useSelector, dispatch] = useMemoReducer(counterReducer, { count: 0 });
-
-  const decrement = useCallback(
-    () => dispatch({ type: "decrement" }),
-    [dispatch]
-  );
-  const increment = useCallback(() => {
-    dispatch({ type: "increment" });
-  }, [dispatch]);
-
-  const contextValues = useMemo(
-    () => ({
-      useSelector,
-      decrement,
-      increment,
-    }),
-    []
-  );
-
-  return (
-    <CounterServiceContext.Provider value={contextValues}>
-      {children}
-    </CounterServiceContext.Provider>
-  );
-});
-```
-
-Notably, the service is memoized, ensuring that the provider doesn't trigger needless re-renders. `useMemoReducer` seamlessly handles the orchestration of re-rendering processes. All that’s required on your end is to retrieve the UserSelector from the context hook within the necessary React component, and then pass the selector to it, akin to the familiar workflow with Redux.
-
-```javascript
-const Counter = () => {
-  const { useSelector } = useCounterService();
-
-  const count = useSelector((state) => state.count);
-
-  return <span>{count}</span>;
-};
-
-const ActionButtons = () => {
-  const { decrement, increment } = useCounterService();
-
-  return (
-    <>
-      <button onClick={decrement}>-</button>
-      <button onClick={increment}>+</button>
-    </>
-  );
-};
-```
-
-Let’s integrate this in the counter component.
-
-```javascript
-const CounterComponent = () => (
-  <CounterService>
-    <Counter />
-    <ActionButtons />
-  </CounterService>
-);
-```
-
-What we've achieved here is the creation of a localized store dedicated to a set of components. But what’s even more impressive is the scalability: should you need multiple counters on a single page, simply instantiate this component multiple times. Each counter will maintain its distinct state and independent logic, providing an autonomous ecosystem for each instance.
-
-```javascript
-const MainComponent = () => (
-  <>
-    <CounterComponent />
-    <CounterComponent />
-  </>
-);
-
-createRoot(document.getElementById("app-init")).render(<MainComponent />);
-```
-
-This methodology unlocks boundless possibilities for ingenuity and experimentation in your development process.
 
 ## Integration with Redux DevTools
 
