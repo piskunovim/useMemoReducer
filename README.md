@@ -44,6 +44,8 @@ Let's create a simple application that will use **React Context** and `useMemoRe
 
 <img alt="useMemoReducer usage demo" src="https://github.com/piskunovim/useMemoReducer/blob/main/media/demo.gif?raw=true" width="700px" />
 
+[![Edit smoosh-breeze-pcv676](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/smoosh-breeze-pcv676?fontsize=14&hidenavigation=1&module=%2Fsrc%2FCounter%2Fservices%2FCounterService%2FCounterService.jsx&theme=dark)
+
 Traditionally, React Contexts have had a reputation for being cumbersome when it comes to state storage, mainly due to the challenges in optimizing providers to prevent unnecessary re-renders upon state changes. `useMemoReducer` paves the way for a solution to this issue.
 
 Imagine that we are building a simple counter, and we wish to create a service that allows incrementing and decrementing a value within the state.
