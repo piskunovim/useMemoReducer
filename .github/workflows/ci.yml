@@ -24,6 +24,9 @@ jobs:
     - name: Run Tests
       run: npm test
 
+    - name: Check Bundle Size
+      run: npm run size
+
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2
       with:

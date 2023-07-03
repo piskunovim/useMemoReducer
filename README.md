@@ -2,6 +2,7 @@
 
 ![Workflow Status](https://img.shields.io/github/actions/workflow/status/piskunovim/useMemoReducer/ci.yml)
 ![Version](https://img.shields.io/github/package-json/v/piskunovim/useMemoReducer/main?label=version)
+![bundle size](https://img.shields.io/badge/bundle%20size-2.31%20KB-brightgreen)
 [![codecov](https://codecov.io/gh/piskunovim/useMemoReducer/branch/main/graph/badge.svg?token=1O85HE84LP)](https://codecov.io/gh/piskunovim/useMemoReducer)
 
 ## Overview
