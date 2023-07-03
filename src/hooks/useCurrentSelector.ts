@@ -29,16 +29,19 @@ export const useCurrentSelector: UseCurrentSelector = (selector, store, { subscr
 
   const isSubscribed = useRef(false);
 
+  const cleanUp = useCallback(() => {
+    isSubscribed.current = false;
+    unSubscribe(checkForUpdates);
+  }, [unSubscribe, checkForUpdates]);
+
   useEffect(() => {
     if (!isSubscribed.current) {
       subscribe(checkForUpdates);
     }
     isSubscribed.current = true;
 
-    return () => {
-      unSubscribe(checkForUpdates);
-    };
-  }, [checkForUpdates, subscribe, unSubscribe]);
+    return cleanUp;
+  }, [checkForUpdates, subscribe]);
 
   return selectedStateRef.current;
 };
