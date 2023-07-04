@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react';
-import { useMemoReducer } from '../src';
-import { DefaultTestComponent } from './defaultComponent';
+import { useMemoReducer, UseSelector } from '../src';
+import { Action, DefaultTestComponent } from './defaultComponent';
 
 describe('useMemoReducer', () => {
   test('it should initialize with correct initial state', () => {
@@ -227,5 +227,113 @@ describe('useMemoReducer', () => {
 
     // Ensure that the mock function was called with the expected count value
     expect(handleCountUpdate).toHaveBeenCalledWith(0);
+  });
+
+  test('it should only update the component that is dependent on the changed state', () => {
+    type State = { count: number; anotherCount: number };
+    enum Action {
+      SET_COUNT = 'SET_COUNT',
+      SET_ANOTHER_COUNT = 'SET_ANOTHER_COUNT',
+    }
+    type Actions = { type: Action.SET_COUNT; payload: number } | { type: Action.SET_ANOTHER_COUNT; payload: number };
+
+    type Context = {
+      useSelector: UseSelector<State>;
+      setCount: (count: number) => void;
+      setAnotherCount: (anotherCount: number) => void;
+    };
+
+    const MemoReducerContext = React.createContext({} as Context);
+    const useProviderContext = () => React.useContext(MemoReducerContext);
+
+    const MemoReducerProvider = React.memo(({ children }: { children: React.ReactNode }) => {
+      const [useSelector, dispatch] = useMemoReducer(
+        (state: State, action: Actions) => {
+          switch (action.type) {
+            case Action.SET_COUNT:
+              return { ...state, count: action.payload };
+            case Action.SET_ANOTHER_COUNT:
+              return { ...state, anotherCount: action.payload };
+            default:
+              return state;
+          }
+        },
+        { count: 0, anotherCount: 0 },
+      );
+
+      const contextValue = React.useMemo(
+        () => ({
+          useSelector,
+          setCount: (count: number) => dispatch({ type: Action.SET_COUNT, payload: count }),
+          setAnotherCount: (anotherCount: number) =>
+            dispatch({ type: Action.SET_ANOTHER_COUNT, payload: anotherCount }),
+        }),
+        [useSelector, dispatch],
+      );
+
+      return <MemoReducerContext.Provider value={contextValue}>{children}</MemoReducerContext.Provider>;
+    });
+
+    const CountComponent = ({ triggerUseEffect }: { triggerUseEffect: (count: number) => void }) => {
+      const { useSelector } = useProviderContext();
+      const count = useSelector((state) => state.count);
+
+      React.useEffect(() => {
+        triggerUseEffect(count);
+      }, [count]);
+
+      return null;
+    };
+    const AnotherCountComponent = ({ triggerUseEffect }: { triggerUseEffect: (anotherCount: number) => void }) => {
+      const { useSelector } = useProviderContext();
+      const anotherCount = useSelector((state) => state.anotherCount);
+
+      React.useEffect(() => {
+        triggerUseEffect(anotherCount);
+      }, [anotherCount]);
+
+      return null;
+    };
+
+    const ActionButtonsComponent = () => {
+      const { setCount, setAnotherCount } = useProviderContext();
+
+      return (
+        <div>
+          <button data-testid="set-count-value" onClick={() => setCount(10)}>
+            Set Count To Ten
+          </button>
+          <button onClick={() => setAnotherCount(10)}>Set Another Count To Ten</button>
+        </div>
+      );
+    };
+
+    type Props = {
+      onCountUseEffect: (count: number) => void;
+      onAnotherCountUseEffect: (anotherCount: number) => void;
+    };
+    const MultiComponentTest = ({ onCountUseEffect, onAnotherCountUseEffect }: Props) => (
+      <MemoReducerProvider>
+        <CountComponent triggerUseEffect={onCountUseEffect} />
+        <AnotherCountComponent triggerUseEffect={onAnotherCountUseEffect} />
+        <ActionButtonsComponent />
+      </MemoReducerProvider>
+    );
+
+    const handleCountUseEffect = jest.fn();
+    const handleAnotherCountUseEffect = jest.fn();
+
+    const { getByTestId } = render(
+      <MultiComponentTest
+        onCountUseEffect={handleCountUseEffect}
+        onAnotherCountUseEffect={handleAnotherCountUseEffect}
+      />,
+    );
+
+    const countValue = getByTestId('set-count-value');
+    fireEvent.click(countValue);
+
+    expect(handleCountUseEffect).toHaveBeenCalledTimes(2);
+    expect(handleAnotherCountUseEffect).toHaveBeenCalledTimes(1);
   });
 });
