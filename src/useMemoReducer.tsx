@@ -1,4 +1,4 @@
-import { Reducer, useCallback, useLayoutEffect, useMemo, useReducer, useRef } from 'react';
+import { Reducer, useCallback, useMemo, useRef } from 'react';
 
 import { useCurrentSelector as currentSelector } from './hooks/useCurrentSelector';
 import { useCreateReduxDevtools } from './hooks/useReduxDevtools/useReduxDevtools';
@@ -11,14 +11,17 @@ export const useMemoReducer = <S, A, O>(
   options?: O,
 ): [UseSelector<S>, Dispatch<S, A>] => {
   const devtools = useCreateReduxDevtools(reducer, initialState, options);
-  const [store, dispatch] = useReducer(reducer, initialState);
-
   const devtoolsRef = useRef(devtools);
   devtoolsRef.current = devtools;
 
-  const storeRef = useRef(store);
-  storeRef.current = store;
-  const getState = (): S => storeRef.current;
+  const reducerRef = useRef(reducer);
+  const stateRef = useRef(initialState);
+
+  const dispatch = (action: A) => {
+    stateRef.current = reducerRef.current(stateRef.current, action);
+    subscribersRef.current.forEach((sub) => sub(stateRef.current));
+  };
+  const getState = (): S => stateRef.current;
 
   const customDispatch: Dispatch<S, A> = useCallback((action: A | ThunkAction<S, A>) => {
     if (isThunk<S, A>(action)) {
@@ -33,11 +36,6 @@ export const useMemoReducer = <S, A, O>(
   }, []);
 
   const subscribersRef = useRef<Subscribers<S>>(new Set([]));
-
-  useLayoutEffect(() => {
-    // Notify all subscribers when store state changes
-    subscribersRef.current.forEach((sub) => sub(store));
-  }, [store]);
 
   const subscribe = useCallback((subscriber: Subscriber<S>) => {
     subscribersRef.current.add(subscriber);
