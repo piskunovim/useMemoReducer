@@ -5,17 +5,17 @@ export enum Action {
   FETCH_DATA_FAILURE = 'FETCH_DATA_FAILURE',
 }
 
+type State = {
+  title: string;
+  errorMessage: string;
+};
+
 type Actions = { type: Action.FETCH_DATA_SUCCESS; data: State } | { type: Action.FETCH_DATA_FAILURE; error: Error };
 
 export type Thunk<R> = ThunkAction<State, Actions, R>;
 
 export type FetchResponse = {
   title: string;
-};
-
-type State = {
-  title: string;
-  errorMessage: string;
 };
 
 export const initialState: State = {
@@ -25,11 +25,13 @@ export const initialState: State = {
 
 export const reducer = (state: State, action: Actions) => {
   switch (action.type) {
-    case Action.FETCH_DATA_SUCCESS:
+    case Action.FETCH_DATA_SUCCESS: {
       const { title } = action.data;
       return { ...state, title };
-    case Action.FETCH_DATA_FAILURE:
+    }
+    case Action.FETCH_DATA_FAILURE: {
       return { ...state, errorMessage: action.error.message };
+    }
     default:
       return state;
   }
