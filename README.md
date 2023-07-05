@@ -1,4 +1,5 @@
 # `useMemoReducer`
+**Empowering Selective Rendering**
 
 ![Workflow Status](https://img.shields.io/github/actions/workflow/status/piskunovim/useMemoReducer/ci.yml)
 ![Version](https://img.shields.io/github/package-json/v/piskunovim/useMemoReducer/main?label=version)
@@ -24,36 +25,88 @@ Import:
 import { useMemoReducer } from 'use-memo-reducer';
 ```
 
-## What are you getting?
+## Features
 
-🎯 **Scoped React Context**: Utilize a React context with a state that is readily available to all its children using a `useSelector()`.
+✨ **Enhanced Selective Rendering**: increase performance with `useMemoReducer` selective rendering, letting your components render only what's necessary! 🚀
 
-⚡ **Optimized Rendering**: The state change does not trigger a re-render of all children components, but only those in which the state actually changed, ensuring optimal performance.
+🤝 **Broad React Version Support**: Embrace flexibility with full support for React versions 16, 17, and 18, ensuring seamless integration into any project! 🛠️
 
-⚙️ **Support for Thunks**: Leverage thunks for more intricate and asynchronous actions, adding depth to your state management.
+💡 Thunk Support:Tap into the potency of thunks to manage intricate and asynchronous actions, fortifying your state management architecture!  🌟
 
-♻️ **Reusable Store**: It’s highly reusable - the store service you've implemented can be effortlessly reused as many times as you wish across different parts of your application, promoting consistency and DRY (Don't Repeat Yourself) principles.
-
-🔍 **Debugging with Redux DevTools**: Gain insights into the state flow by integrating `useMemoReducer`with Redux DevTools. Simply assign meaningful names to your connections, and delve into state transitions, actions, and timelines, all at your fingertips.
-
-Harness the full potential of `useMemoReducer` to build scalable, efficient, and maintainable React applications.
-
-## Requirements
-
-`useMemoReducer` supports the following versions of React:
-
-- React 16 (16.8.0 and newer)
-- React 17
-- React 18 (up to 18.2.0)
+🔍 **Redux DevTools Integration**: Supercharge your development experience with seamless integration with Redux DevTools, keeping track of state changes with ease and precision! 🕵️‍♂️
 
 
-## Getting Started
+## Basic Usage
+
+The `useMemoReducer` hook offers an efficient way to ensure that your component only renders when it is truly necessary. This can be especially beneficial in scenarios where the component's state is composed of multiple properties, and you want to avoid unnecessary re-renders when some of these properties change.
+
+Let’s take an example where the state is an object containing two properties: `count` and `user`. We will manipulate the state using buttons and observe the rendering behavior.
+
+```javascript
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { useMemoReducer } from "use-memo-reducer";
+
+const counterReducer = (state, action) => {
+  switch (action.type) {
+    case "increment": {
+      return { ...state, count: state.count + 1 };
+    }
+    case "decrement": {
+      return { ...state, count: state.count - 1 };
+    }
+    case "switch_user": {
+      return { ...state, user: { ...state.user, name: "Jane" } };
+    }
+    default:
+      return state;
+  }
+};
+
+const App = () => {
+  const [useSelector, dispatch] = useMemoReducer(counterReducer, {
+    count: 0,
+    user: { name: "John" },
+  });
+
+  // An extra re-render will only occur when
+  // the "Switch User" button is clicked.
+  console.log("rerender...");
+
+  const user = useSelector((state) => state.user);
+
+  return (
+    <div className="App">
+      <h2>User data: {JSON.stringify(user)}</h2>
+
+      <button onClick={() => dispatch({ type: "decrement" })}>Decrement</button>
+      <button onClick={() => dispatch({ type: "increment" })}>Increment</button>
+      <button onClick={() => dispatch({ type: "switch_user" })}>
+        Switch User
+      </button>
+    </div>
+  );
+};
+
+createRoot(document.getElementById("app-init")).render(<App />);
+```
+[![Edit basic-use-memo-reducer](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/basic-use-memo-reducer-n5z9yg?fontsize=14&hidenavigation=1&theme=dark)
+
+Let's delve into the behavior of this component powered by the `useMemoReducer` hook. Pay attention to the line with `console.log("rerender...")`. This acts as an indicator in the console every time the component re-renders, which is very helpful for tracking updates.
+
+Now, an important part of this hook is the `useSelector` function. This function enables you to subscribe to specific properties within the state. In this example, we have subscribed to the user property. The intriguing part here is that the component will only re-render when there are changes to the user property. This selective rendering is one of the strengths of the `useMemoReducer` hook.
+
+But what about the `count` property? Well, if you increment or decrement the `count` without altering the `user`, you’ll notice that the component does not re-render. This is because it’s not subscribed to the `count` property.
+
+This highlights the heart of `useMemoReducer`, transforming the way you manage rendering behavior for enhanced performance and efficiency.
+
+## Context
 
 Let's create a simple application that will use **React Context** and `useMemoReducer` and will show how child optimised rerendering does work. 
-
+    
 <img alt="useMemoReducer usage demo" src="media/demo.gif" width="800" />
 
-[![Edit smoosh-breeze-pcv676](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/smoosh-breeze-pcv676?fontsize=14&hidenavigation=1&module=%2Fsrc%2FCounter%2Fservices%2FCounterService%2FCounterService.jsx&theme=dark)
+[![Edit use-memo-reducer-context-example](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/use-memo-reducer-context-example-pcv676?fontsize=14&hidenavigation=1&theme=dark)
 
 Traditionally, React Contexts have had a reputation for being cumbersome when it comes to state storage, mainly due to the challenges in optimizing providers to prevent unnecessary re-renders upon state changes. `useMemoReducer` paves the way for a solution to this issue.
 
