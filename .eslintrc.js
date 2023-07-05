@@ -21,11 +21,13 @@ module.exports = {
   rules: {
     'no-console': 'off',
     'no-shadow': 'off',
+    'arrow-body-style': 'off',
     'no-empty-function': 'off',
     'no-void': ['error', { allowAsStatement: true }],
 
     'max-len': ['error', { code: 120 }],
 
+    'react/button-has-type': 'off',
     'react-hooks/rules-of-hooks': 'error',
     'react-hooks/exhaustive-deps': 'warn',
     'react/jsx-filename-extension': [1, { extensions: ['.ts', '.tsx'] }],
