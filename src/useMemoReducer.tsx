@@ -16,26 +16,29 @@ export const useMemoReducer = <S, A, O>(
 
   const reducerRef = useRef(reducer);
   const stateRef = useRef(initialState);
+  const subscribersRef = useRef<Subscribers<S>>(new Set([]));
 
-  const dispatch = (action: A) => {
+  const dispatch = useCallback((action: A) => {
     stateRef.current = reducerRef.current(stateRef.current, action);
     subscribersRef.current.forEach((sub) => sub(stateRef.current));
-  };
-  const getState = (): S => stateRef.current;
-
-  const customDispatch: Dispatch<S, A> = useCallback((action: A | ThunkAction<S, A>) => {
-    if (isThunk<S, A>(action)) {
-      return action(customDispatch, getState);
-    }
-
-    if (devtoolsRef.current.devtoolsEnabled()) {
-      devtoolsRef.current.dispatchToDevtools?.(action);
-    }
-
-    return dispatch(action);
   }, []);
 
-  const subscribersRef = useRef<Subscribers<S>>(new Set([]));
+  const getState = useCallback((): S => stateRef.current, []);
+
+  const customDispatch: Dispatch<S, A> = useCallback(
+    (action: A | ThunkAction<S, A>) => {
+      if (isThunk<S, A>(action)) {
+        return action(customDispatch, getState);
+      }
+
+      if (devtoolsRef.current.devtoolsEnabled()) {
+        devtoolsRef.current.dispatchToDevtools?.(action);
+      }
+
+      return dispatch(action);
+    },
+    [dispatch, getState],
+  );
 
   const subscribe = useCallback((subscriber: Subscriber<S>) => {
     subscribersRef.current.add(subscriber);
@@ -48,7 +51,7 @@ export const useMemoReducer = <S, A, O>(
   const useSelector: UseSelector<S> = useCallback(
     <TSelected,>(selector: (store: S) => TSelected) =>
       currentSelector<S, TSelected>(selector, getState(), { subscribe, unSubscribe }),
-    [subscribe, unSubscribe],
+    [getState, subscribe, unSubscribe],
   );
 
   return useMemo(() => [useSelector, customDispatch], [customDispatch, useSelector]);
