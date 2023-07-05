@@ -43,7 +43,7 @@ Harness the full potential of `useMemoReducer` to build scalable, efficient, and
 
 Let's create a simple application that will use **React Context** and `useMemoReducer` and will show how child optimised rerendering does work. 
 
-<img alt="useMemoReducer usage demo" src="https://github.com/piskunovim/useMemoReducer/blob/main/media/demo.gif?raw=true" width="700px" />
+<img alt="useMemoReducer usage demo" src="media/demo.gif" width="800" />
 
 [![Edit smoosh-breeze-pcv676](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/smoosh-breeze-pcv676?fontsize=14&hidenavigation=1&module=%2Fsrc%2FCounter%2Fservices%2FCounterService%2FCounterService.jsx&theme=dark)
 
