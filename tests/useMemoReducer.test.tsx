@@ -1,5 +1,6 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react';
+
 import { useMemoReducer } from '../src';
 import { DefaultTestComponent } from './defaultComponent';
 
@@ -73,7 +74,9 @@ describe('useMemoReducer', () => {
 
     fireEvent.click(plusButton);
 
-    await new Promise((r) => setTimeout(r, 100)); // simulate async action
+    await new Promise((r) => {
+      setTimeout(r, 100);
+    }); // simulate async action
 
     fireEvent.click(plusButton);
 

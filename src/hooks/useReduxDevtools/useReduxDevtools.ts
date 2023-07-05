@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 import { Reducer, useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { disconnectObserver } from './DisconnectObserver';
@@ -22,7 +23,7 @@ const useReduxDevtools = <S, A>(
     return { devtoolsEnabled: () => false };
   }
 
-  const unsubscribe = useRef<Function | null>();
+  const unsubscribe = useRef<() => void | null>();
 
   const subscribe = useCallback(() => {
     unsubscribe.current?.();

@@ -1,7 +1,8 @@
 import React from 'react';
 import { act, waitFor, render, screen, cleanup } from '@testing-library/react';
+
 import { fetchDataThunk } from './thunks';
-import { reducer, initialState, FetchResponse, Thunk } from './reducer';
+import { reducer, initialState, Thunk } from './reducer';
 import { useMemoReducer } from '../../src';
 
 const ThunksTestComponent = () => {
