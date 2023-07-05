@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, act, cleanup } from '@testing-library/react';
+
 import { useMemoReducer } from '../../src';
 import * as useReduxDevtools from '../../src/hooks/useReduxDevtools/useReduxDevtools';
 import { Dispatch } from '../../src/models';
@@ -22,7 +23,7 @@ describe('devTools', () => {
     enum Action {
       MOCK_ACTION = 'MOCK_ACTION',
     }
-    const reducer = jest.fn((state, action) => state);
+    const reducer = jest.fn((state) => state);
     const initialState = {};
 
     // Mock the dispatchToDevtools function
@@ -50,7 +51,7 @@ describe('devTools', () => {
     const mockAction = { type: Action.MOCK_ACTION };
 
     act(() => {
-      customDispatchRef.current && customDispatchRef.current(mockAction);
+      return customDispatchRef.current && customDispatchRef.current(mockAction);
     });
 
     // Assert that dispatchToDevtools was called with the correct action
