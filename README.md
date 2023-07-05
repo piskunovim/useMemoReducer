@@ -36,7 +36,15 @@ import { useMemoReducer } from 'use-memo-reducer';
 
 🔍 **Debugging with Redux DevTools**: Gain insights into the state flow by integrating `useMemoReducer`with Redux DevTools. Simply assign meaningful names to your connections, and delve into state transitions, actions, and timelines, all at your fingertips.
 
-Harness the full potential of `useMemoReducer` to build scalable, efficient, and maintainable React applications. [Comparison with Redux and useReducer](https://github.com/piskunovim/useMemoReducer#-benchmark-results).
+Harness the full potential of `useMemoReducer` to build scalable, efficient, and maintainable React applications.
+
+## Requirements
+
+`useMemoReducer` supports the following versions of React:
+
+- React 16 (16.8.0 and newer)
+- React 17
+- React 18 (up to 18.2.0)
 
 
 ## Getting Started
@@ -153,7 +161,7 @@ createRoot(document.getElementById("app-init")).render(<MainComponent />);
 
 This methodology unlocks boundless possibilities for ingenuity and experimentation in your development process.
 
-### Simple component
+### Simple usage
 
 Here is an example that demonstrates how to use `useMemoReducer` within a simple functional component.
 
