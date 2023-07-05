@@ -21,6 +21,7 @@ module.exports = {
   rules: {
     'no-console': 'off',
     'no-shadow': 'off',
+    'arrow-body-style': 'off',
     'no-empty-function': 'off',
     'no-void': ['error', { allowAsStatement: true }],
 
