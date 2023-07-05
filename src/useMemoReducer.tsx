@@ -48,9 +48,8 @@ export const useMemoReducer = <S, A, O>(
   }, []);
 
   const useSelector: UseSelector<S> = useCallback(
-    <TSelected,>(selector: (store: S) => TSelected) => {
-      return currentSelector<S, TSelected>(selector, getState(), { subscribe, unSubscribe });
-    },
+    <TSelected,>(selector: (store: S) => TSelected) =>
+      currentSelector<S, TSelected>(selector, getState(), { subscribe, unSubscribe }),
     [subscribe, unSubscribe],
   );
 
