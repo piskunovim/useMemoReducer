@@ -19,9 +19,7 @@ module.exports = {
     },
   },
   rules: {
-    'vars-on-top': 'off',
     'no-console': 'off',
-    'no-shadow': 'off',
     'no-empty-function': 'off',
     'no-void': ['error', { allowAsStatement: true }],
 
