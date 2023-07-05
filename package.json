@@ -13,7 +13,14 @@
     "react",
     "hooks",
     "reducer",
-    "memo"
+    "memo",
+    "local-redux",
+    "redux",
+    "context",
+    "performance",
+    "optimization",
+    "state-management",
+    "redux-alternative"
   ],
   "author": "Igor Piskunov",
   "license": "MIT",
