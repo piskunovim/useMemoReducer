@@ -15,7 +15,7 @@ Its usage closely mirrors that of `useReducer`, but additionally supports **thun
 
 ## Installation
 
-```javascript
+```bash
 npm install use-memo-reducer
 ```
 
@@ -31,78 +31,27 @@ import { useMemoReducer } from 'use-memo-reducer';
 
 🤝 **Broad React Version Support**: Embrace flexibility with full support for React versions 16, 17, and 18, ensuring seamless integration into any project! 🛠️
 
-💡 Thunk Support:Tap into the potency of thunks to manage intricate and asynchronous actions, fortifying your state management architecture!  🌟
+💡 **Thunk Support**: Tap into the potency of thunks to manage  synchronous/asynchronous actions. Interact with a store by utilizing the `dispatch` and `getState` methods.  🌟
 
-🔍 **Redux DevTools Integration**: Supercharge your development experience with seamless integration with Redux DevTools, keeping track of state changes with ease and precision! 🕵️‍♂️
-
+🔍 **Redux DevTools Integration**: Gain insights into the state flow by integrating `useMemoReducer` with Redux DevTools. Simply assign meaningful names to your connections, and delve into state actions history. 🕵️‍♂️
 
 ## Basic Usage
 
-The `useMemoReducer` hook offers an efficient way to ensure that your component only renders when it is truly necessary. This can be especially beneficial in scenarios where the component's state is composed of multiple properties, and you want to avoid unnecessary re-renders when some of these properties change.
+In simple components where performance is not a critical concern, `useMemoReducer` can be employed as a substitute for the conventional `useReducer`. [Specifications](docs/specifications.md).
 
-Let’s take an example where the state is an object containing two properties: `count` and `user`. We will manipulate the state using buttons and observe the rendering behavior.
+> However, it brings more to the table by incorporating features like `thunks`, similar to `redux-thunks`, a selector functionality akin to Redux’s `useSelector`, and integration with `Redux DevTools` for effortless debugging in a development environment.
 
-```javascript
-import React from "react";
-import { createRoot } from "react-dom/client";
-import { useMemoReducer } from "use-memo-reducer";
+## Advanced Usage
 
-const counterReducer = (state, action) => {
-  switch (action.type) {
-    case "increment": {
-      return { ...state, count: state.count + 1 };
-    }
-    case "decrement": {
-      return { ...state, count: state.count - 1 };
-    }
-    case "switch_user": {
-      return { ...state, user: { ...state.user, name: "Jane" } };
-    }
-    default:
-      return state;
-  }
-};
+In components where performance is important, the combination of `useMemoReducer` and React’s `Context API` can significantly optimize the rendering process of child components. This is especially advantageous in scenarios where the state updates are frequent or the component tree is substantial.
 
-const App = () => {
-  const [useSelector, dispatch] = useMemoReducer(counterReducer, {
-    count: 0,
-    user: { name: "John" },
-  });
+`useMemoReducer` with a `Сontext API` minimizes and optimizes re-renders through its memoization capabilities. Furthermore, it allows you to use the power of `thunks` for complex logic and asynchronous actions, as well as `selectors` for updated state retrievals.
 
-  // An extra re-render will only occur when
-  // the "Switch User" button is clicked.
-  console.log("rerender...");
+This approach ensures that only those child components that are actually affected by a state change are re-rendered, instead of the entire component tree. This leads to a more performant and responsive UI, particularly in large-scale applications.
 
-  const user = useSelector((state) => state.user);
+## Example
 
-  return (
-    <div className="App">
-      <h2>User data: {JSON.stringify(user)}</h2>
-
-      <button onClick={() => dispatch({ type: "decrement" })}>Decrement</button>
-      <button onClick={() => dispatch({ type: "increment" })}>Increment</button>
-      <button onClick={() => dispatch({ type: "switch_user" })}>
-        Switch User
-      </button>
-    </div>
-  );
-};
-
-createRoot(document.getElementById("app-init")).render(<App />);
-```
-[![Edit basic-use-memo-reducer](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/basic-use-memo-reducer-n5z9yg?fontsize=14&hidenavigation=1&theme=dark)
-
-Let's delve into the behavior of this component powered by the `useMemoReducer` hook. Pay attention to the line with `console.log("rerender...")`. This acts as an indicator in the console every time the component re-renders, which is very helpful for tracking updates.
-
-Now, an important part of this hook is the `useSelector` function. This function enables you to subscribe to specific properties within the state. In this example, we have subscribed to the user property. The intriguing part here is that the component will only re-render when there are changes to the user property. This selective rendering is one of the strengths of the `useMemoReducer` hook.
-
-But what about the `count` property? Well, if you increment or decrement the `count` without altering the `user`, you’ll notice that the component does not re-render. This is because it’s not subscribed to the `count` property.
-
-This highlights the heart of `useMemoReducer`, transforming the way you manage rendering behavior for enhanced performance and efficiency.
-
-## Context
-
-Let's create a simple application that will use **React Context** and `useMemoReducer` and will show how child optimised rerendering does work. 
+Let's create a simple application that will use `useMemoReducer` and `Context API`  and will show how child optimised rendering does work. 
     
 <img alt="useMemoReducer usage demo" src="media/demo.gif" width="800" />
 
@@ -113,6 +62,7 @@ Traditionally, React Contexts have had a reputation for being cumbersome when it
 Imagine that we are building a simple counter, and we wish to create a service that allows incrementing and decrementing a value within the state.
 
 ```javascript
+/* CounterService.jsx */
 import React, {
   createContext,
   useContext,
@@ -129,24 +79,25 @@ export const useCounterService = () => useContext(CounterServiceContext);
 const counterReducer = (state, action) => {
   switch (action.type) {
     case "increment":
-      return { count: state.count + 1 };
+      return { ...state, count: state.count + 1 };
     case "decrement":
-      return { count: state.count - 1 };
+      return { ...state, count: state.count - 1 };
     default:
       return state;
   }
 };
 
 export const CounterService = memo(({ children }) => {
-  const [useSelector, dispatch] = useMemoReducer(counterReducer, { count: 0 });
+  const [useSelector, dispatch] = useMemoReducer(counterReducer, { count: 0, anotherCount: 0 });
+  
+  const increment = useCallback(() => {
+    dispatch({ type: "increment" });
+  }, [dispatch]);
 
   const decrement = useCallback(
     () => dispatch({ type: "decrement" }),
     [dispatch]
   );
-  const increment = useCallback(() => {
-    dispatch({ type: "increment" });
-  }, [dispatch]);
 
   const contextValues = useMemo(
     () => ({
@@ -154,7 +105,7 @@ export const CounterService = memo(({ children }) => {
       decrement,
       increment,
     }),
-    []
+    [decrement, increment, useSelector]
   );
 
   return (
@@ -165,20 +116,34 @@ export const CounterService = memo(({ children }) => {
 });
 ```
 
-Notably, the service is memoized is memoized to optimize performance by avoiding unnecessary re-renders. `useMemoReducer` seamlessly handles the orchestration of re-rendering processes. All that’s required on your end is to retrieve the `useSelector` from the context hook within the necessary React component, and then pass the selector to it, akin to the familiar workflow with Redux.
+Notably, the service is memoized to optimize performance by avoiding unnecessary re-renders. `useMemoReducer` seamlessly handles the orchestration of re-rendering processes. All that’s required on your end is to retrieve the `useSelector` from the context hook within the necessary React component, and then pass the selector to it, akin to the familiar workflow with Redux.
 
 ```javascript
+/* Counter.jsx */
 const Counter = () => {
   const { useSelector } = useCounterService();
 
   const count = useSelector((state) => state.count);
+  console.log("render count");
 
-  return <span>{count}</span>;
+  return <span>Count: {count}</span>;
 };
 
+/* AnotherCounter.jsx */
+const AnotherCounter = () => {
+  const { useSelector } = useCounterService();
+
+  const anotherCount = useSelector((state) => state.anotherCount);
+  console.log("render another count");
+  
+  return <div>Another Count: {anotherCount}</div>;
+};
+
+/* ActionButtons.jsx */
 const ActionButtons = () => {
   const { decrement, increment } = useCounterService();
-
+  console.log("render action buttons");
+  
   return (
     <>
       <button onClick={decrement}>-</button>
@@ -191,129 +156,107 @@ const ActionButtons = () => {
 Let’s integrate this in the counter component.
 
 ```javascript
+/* CounterComponent.jsx */
 const CounterComponent = () => (
   <CounterService>
     <Counter />
+    <AnotherCounter />
     <ActionButtons />
   </CounterService>
 );
+
+/* MainComponent.jsx  */
+const MainComponent = () => <CounterComponent />;
+
+/* index.js */
+createRoot(document.getElementById("app-init")).render(<MainComponent />);
 ```
 
 What we've achieved here is the creation of a localized store dedicated to a set of components. But what’s even more impressive is the scalability: should you need multiple counters on a single page, simply instantiate this component multiple times. Each counter will maintain its distinct state and independent logic, providing an autonomous ecosystem for each instance.
 
 ```javascript
+/* MainComponent.jsx  */
 const MainComponent = () => (
   <>
     <CounterComponent />
     <CounterComponent />
   </>
 );
-
-createRoot(document.getElementById("app-init")).render(<MainComponent />);
 ```
 
 This methodology unlocks boundless possibilities for ingenuity and experimentation in your development process.
 
-### Simple usage
+## Thunks
 
-Here is an example that demonstrates how to use `useMemoReducer` within a simple functional component.
+When we need to access the current state of our reducer inside an action, such as an increment or decrement function in **CounterService**, it is crucial to do so without causing unnecessary re-renders.
+
+One way to attempt this is by using `useSelector` as shown below:
 
 ```javascript
-import React from 'react';
-import { useMemoReducer } from './useMemoReducer';
+const state = useSelector(state => state);
+```
 
-// Define the initial state
-const initialState = { count: 0 };
+However, this approach is not ideal because it causes the component to re-render every time the state changes, and consequently, all child components subscribed to it will also re-render.
 
-// Define the reducer
+In cases where we need to delay the dispatch of an action, or to dispatch only if certain conditions are met, we need to use `thunks`. 
+
+Here's how we can use a `thunk` to access the current state within an action without triggering unnecessary re-renders:
+
+```javascript
+/* thunks.js */
+const resetAction = () => (dispatch) => {
+  console.log('reset count');
+  dispatch({ type: "reset" });
+}
+
+export const incrementAction = () => (dispatch, getState) => {
+  const { count } = getState();
+  
+  if (count < 10) {
+    return dispatch({ type: "increment" });
+  }
+  
+  return dispatch(resetAction());
+}
+
+/* CounterService.js */
 const counterReducer = (state, action) => {
   switch (action.type) {
-    case 'increment':
-      return { count: state.count + 1 };
-    case 'decrement':
-      return { count: state.count - 1 };
+    case "increment":
+      return { ...state, count: state.count + 1 };
+    case "decrement":
+      return { ...state, count: state.count - 1 };
+    case "reset":
+      return { ...state, count: 0 };
     default:
       return state;
   }
 };
 
-const CounterComponent = () => {
-  // Use the useMemoReducer hook
-  const [useSelector, dispatch] = useMemoReducer(counterReducer, initialState);
+export const CounterService = memo(({ children }) => {
+  const [useSelector, dispatch] = useMemoReducer(counterReducer, { count: 0, anotherCount: 0 });
+  
+  const increment = useCallback(() => {
+    dispatch(incrementAction());
+  }, [dispatch]);
 
-  // Select the count value from state
-  const count = useSelector(state => state.count);
-
-  return (
-    <div>
-      <button onClick={() => dispatch({ type: 'decrement' })}>-</button>
-      <span>Count: {count}</span>
-      <button onClick={() => dispatch({ type: 'increment' })}>+</button>
-    </div>
-  );
-};
-
-export default CounterComponent;
-```
-
-In this example, `useMemoReducer` is used similarly to `useReducer`. The difference is that you get a `useSelector` function instead of the state directly. This allows you to selectively pick parts of the state, and your component will only re-render if the selected parts change.
-
-## Thunks
-
-That's right! You can also dispatch a thunk (a function) instead of a plain action. This is useful for performing async actions or computing derived state before dispatching a plain action.
-
-```javascript
-import React from 'react';
-import { useMemoReducer } from './useMemoReducer';
-
-const initialState = { count: 0, loading: false };
-
-const counterReducer = (state, action) => {
-  switch (action.type) {
-    case 'increment':
-      return { count: state.count + 1 };
-    case 'decrement':
-      return { count: state.count - 1 };
-    case 'loading':
-      return { ...state, loading: true };  
-    default:
-      throw state;
-  }
-};
-
-const CounterComponent = () => {
-  const [useSelector, dispatch] = useMemoReducer(counterReducer, initialState);
-
-  const count = useSelector(state => state.count);
-  const loading = useSelector(state => state.loading);
-
-  // An example thunk to increment the counter after a delay
-  const delayedIncrement = (dispatch, getState) => {
-    // Dispatch a loading action
-    dispatch({ type: 'loading' });
-
-    // After a delay, increment the counter
-    setTimeout(() => {
-      const currentState = getState();
-      if (currentState.loading) {
-        dispatch({ type: 'increment' });
-      }
-    }, 1000);
-  };
+  /* <code_above> */
 
   return (
-    <div>
-      <button onClick={() => dispatch({ type: 'decrement' })}>-</button>
-      <span>Count: {count}</span>
-      {loading && <span>Loading...</span>}
-      <button onClick={() => dispatch({ type: 'increment' })}>+</button>
-      <button onClick={() => dispatch(delayedIncrement)}>Delayed Increment</button>
-    </div>
+    <CounterServiceContext.Provider value={contextValues}>
+      {children}
+    </CounterServiceContext.Provider>
   );
-};
-
-export default CounterComponent;
+});
 ```
+
+[![Edit use-memo-reducer-thunks-example](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/use-memo-reducer-thunks-example-j6trkr?fontsize=14&hidenavigation=1&module=%2Fsrc%2FCounterComponent%2Fservices%2FCounterService%2FCounterService.jsx&theme=dark)
+
+> It's important to recognize that this example is synthetic and has been engineered specifically to demonstrate the features of the hook.
+
+The main difference is that `thunks` allow us to write action creators that return a function instead of an action. This function can be used to delay the dispatch of an action, or to dispatch only if certain conditions are met.
+
+Within the function, `dispatch` and `getState` are accessible as parameters, which can be used to access the current state without causing re-renders. In the provided example, we expect to reset the counter when the count reaches 10. This is achieved through invoking the `resetAction`thunk from inside of `incrementAction` thunk. Notably, thunks could be **asynchronous**.
 
 ## Integration with Redux DevTools
 
@@ -321,34 +264,19 @@ export default CounterComponent;
 
 In order to enable the integration, you need to pass the `devtoolsName` option to the hook in lowercase. This is the name that will be used to identify your store in the Redux DevTools.
 
+
 ```javascript
 const [useSelector, dispatch] = useMemoReducer(counterReducer, initialState, {
   devtoolsName: 'counter',
 });
 ```
 
-## Signature
+Currently, this serves as the main debugging tool, but we are considering providing users with alternative debugging options to complement their debugging needs.
 
-```typescript
-function useMemoReducer<S, A, O>(
-  reducer: Reducer<S, A>,
-  initialState: S,
-  options?: O
-): [useSelector: UseSelector<S>, dispatch: Dispatch<S, A>];
-```
 
-- **`reducer`**: A reducing function that returns a new state, given the current state and an action.
-- **`initialState`**: The initial state to be used for the first render.
-- **`useSelector`**: A hook similar to `useSelector` in Redux. It takes a selector function as an argument and returns the selected state. The selector will be re-run whenever an action is dispatched and some part of the state may have changed.
-- **`dispatch`**: A dispatch function is responsible for sending actions to the store. It accepts both standard action objects and thunks.
+## Considerations for Usage
 
-## Types
-
-- **`S`**: The type of state used by the reducer.
-- **`A`**: The type of actions that can be dispatched to the reducer.
-- **`O`**: The type representing the options for the hook, such as `{ devtoolsName }`.
-
-Remember, regardless hook introduces bunch of optimisation and performance abilities the final user of the hook is a developer. Use this hook judiciously
+Remember, while this hook introduces a range of optimization and performance capabilities, it is important to keep in mind that the final user of the hook is a developer. Therefore, it is crucial to use this hook judiciously and make informed decisions based on your specific use case.
 
 ##  Contributors 👥
 
