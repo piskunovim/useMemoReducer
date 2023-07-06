@@ -1,0 +1,11 @@
+#!/bin/bash
+
+   while read local_ref local_sha remote_ref remote_sha
+   do
+       if [[ $local_ref =~ ^refs/heads/(feature|fix|hotfix|release|refactor|docs)/ ]]; then
+           echo "Branch name is valid. Proceeding with the push."
+       else
+           echo "Error: Branch name is not valid. Branches must be prefixed with 'feature/', 'fix/', 'hotfix/', 'release/', 'refactor/', or 'docs/'."
+           exit 1
+       fi
+   done
