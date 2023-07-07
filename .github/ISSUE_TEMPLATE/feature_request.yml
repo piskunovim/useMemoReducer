@@ -1,0 +1,61 @@
+name: Feature Request
+description: Suggest an idea for this project
+title: '[FEATURE REQUEST]: '
+labels:
+  - enhancement
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        ## Feature Request
+
+        Thank you for taking the time to suggest a new feature. Please fill out
+        this form and include as much information as possible.
+  - type: input
+    id: feature-title
+    attributes:
+      label: Feature Title
+      description: What is the title of the feature you are suggesting?
+      placeholder: 'e.g., New reporting functionality'
+    validations:
+      required: true
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature Description
+      description: Please provide a detailed description of the feature.
+      placeholder: Describe the functionality and benefits of the feature.
+    validations:
+      required: true
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Use Cases
+      description: Please describe the use cases that this feature would address.
+      placeholder: Explain how this feature would be used and by whom.
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature for you?
+      options:
+        - Low
+        - Medium
+        - High
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |-
+        ## Additional Information
+        Provide any additional details or context.
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Additional Information
+      description: >-
+        Add any other context, screenshots, diagrams, or information about the
+        feature request here.
