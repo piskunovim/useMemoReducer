@@ -38,6 +38,7 @@
     "testEnvironment": "jsdom",
     "collectCoverage": true,
     "coverageReporters": [
+      "text",
       "json",
       "lcov"
     ],
