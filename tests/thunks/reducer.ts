@@ -27,7 +27,7 @@ export const reducer = (state: State, action: Actions) => {
   switch (action.type) {
     case Action.FETCH_DATA_SUCCESS: {
       const { title } = action.data;
-      return { ...state, title };
+      return { ...state, title, errorMessage: '' };
     }
     case Action.FETCH_DATA_FAILURE: {
       return { ...state, errorMessage: action.error.message };

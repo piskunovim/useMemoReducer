@@ -1,27 +1,9 @@
-import React from 'react';
-import { act, waitFor, render, screen, cleanup } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 
+import { getCurrentHookValue } from '../helpers';
 import { fetchDataThunk } from './thunks';
 import { reducer, initialState, Thunk } from './reducer';
 import { useMemoReducer } from '../../src';
-
-const ThunksTestComponent = () => {
-  const [useSelector, dispatch] = useMemoReducer(reducer, initialState);
-
-  React.useEffect(() => {
-    dispatch(fetchDataThunk() as unknown as Thunk<void>);
-  }, [dispatch]);
-
-  const title = useSelector((state) => state.title);
-  const errorMessage = useSelector((state) => state.errorMessage);
-
-  return (
-    <div>
-      {errorMessage && <span>{errorMessage}</span>}
-      <span data-testid="title">{title}</span>
-    </div>
-  );
-};
 
 describe('thunks', () => {
   let fetchMock: jest.Mock;
@@ -35,74 +17,70 @@ describe('thunks', () => {
     jest.restoreAllMocks();
   });
 
-  it('should fetch data and render correctly', async () => {
+  it('should fetch the data and render correctly', async () => {
     fetchMock.mockResolvedValueOnce({ json: () => Promise.resolve({ title: 'Validated' }) });
+    const [useSelector, dispatch] = getCurrentHookValue(renderHook(() => useMemoReducer(reducer, initialState)));
+    const initialTitle = getCurrentHookValue(renderHook(() => useSelector((state) => state.title)));
 
     await act(async () => {
-      render(<ThunksTestComponent />);
+      dispatch(fetchDataThunk() as unknown as Thunk<void>);
     });
+    const changedTitle = getCurrentHookValue(renderHook(() => useSelector((state) => state.title)));
 
-    await waitFor(() => {
-      const dataElement = screen.getByTestId('title');
-      expect(dataElement.textContent).toBe('Validated');
-    });
+    expect(initialTitle).toBe('');
+    expect(changedTitle).toBe('Validated');
   });
 
-  it('should handle error when fetching data', async () => {
+  it('should handle the error when fetching the data', async () => {
     fetchMock.mockResolvedValueOnce(Promise.reject(new Error('Failed to load the data')));
+    const [useSelector, dispatch] = getCurrentHookValue(renderHook(() => useMemoReducer(reducer, initialState)));
+    const initialTitle = getCurrentHookValue(renderHook(() => useSelector((state) => state.title)));
+    const initialErrorMessage = getCurrentHookValue(renderHook(() => useSelector((state) => state.errorMessage)));
 
     await act(async () => {
-      render(<ThunksTestComponent />);
+      dispatch(fetchDataThunk() as unknown as Thunk<void>);
     });
 
-    await waitFor(() => {
-      const errorElement = screen.queryByText('Failed to load the data');
-      expect(errorElement).not.toBeNull();
-    });
+    const changedTitle = getCurrentHookValue(renderHook(() => useSelector((state) => state.title)));
+    const changedErrorMessage = getCurrentHookValue(renderHook(() => useSelector((state) => state.errorMessage)));
+
+    expect(initialTitle).toBe('');
+    expect(initialErrorMessage).toBe('');
+    expect(changedTitle).toBe('');
+    expect(changedErrorMessage).toBe('Failed to load the data');
   });
 
-  it('should have different states after unmount and render', async () => {
-    fetchMock.mockResolvedValueOnce({ json: () => Promise.resolve({ title: 'Data 1' }) });
-
-    const { getByTestId } = render(<ThunksTestComponent />);
-    const dataElement = getByTestId('title');
-
-    await act(async () => {
-      await Promise.resolve();
-    });
-
-    expect(dataElement.textContent).toBe('Data 1');
-
-    fetchMock.mockResolvedValueOnce({ json: () => Promise.resolve({ title: 'Data 2' }) });
-
-    await act(async () => {
-      cleanup(); // Unmount the component
-      render(<ThunksTestComponent />);
-      await Promise.resolve();
-    });
-
-    const updatedDataElement = getByTestId('title');
-    expect(updatedDataElement.textContent).toBe('Data 2');
-  });
-
-  it('should clear error message after successful data fetch', async () => {
+  it('should clear the error when data was fetched successfully', async () => {
     fetchMock.mockResolvedValueOnce(Promise.reject(new Error('Failed to load the data')));
+    const [useSelector, dispatch] = getCurrentHookValue(renderHook(() => useMemoReducer(reducer, initialState)));
+    const initialTitle = getCurrentHookValue(renderHook(() => useSelector((state) => state.title)));
+    const initialErrorMessage = getCurrentHookValue(renderHook(() => useSelector((state) => state.errorMessage)));
 
     await act(async () => {
-      render(<ThunksTestComponent />);
+      dispatch(fetchDataThunk() as unknown as Thunk<void>);
     });
 
-    const errorElement = screen.queryByText('Failed to load the data');
-    expect(errorElement).not.toBeNull();
+    const changedErrorMessageAfterReject = getCurrentHookValue(
+      renderHook(() => useSelector((state) => state.errorMessage)),
+    );
 
     fetchMock.mockResolvedValueOnce({ json: () => Promise.resolve({ title: 'Validated' }) });
 
     await act(async () => {
-      cleanup();
-      render(<ThunksTestComponent />);
+      dispatch(fetchDataThunk() as unknown as Thunk<void>);
     });
 
-    const updatedErrorElement = screen.queryByText('Failed to load the data');
-    expect(updatedErrorElement).toBeNull();
+    const changedTitleAfterSuccess = getCurrentHookValue(renderHook(() => useSelector((state) => state.title)));
+    const changedErrorMessageAfterSuccess = getCurrentHookValue(
+      renderHook(() => useSelector((state) => state.errorMessage)),
+    );
+
+    expect(initialTitle).toBe('');
+    expect(initialErrorMessage).toBe('');
+
+    expect(changedErrorMessageAfterReject).toBe('Failed to load the data');
+
+    expect(changedTitleAfterSuccess).toBe('Validated');
+    expect(changedErrorMessageAfterSuccess).toBe('');
   });
 });
