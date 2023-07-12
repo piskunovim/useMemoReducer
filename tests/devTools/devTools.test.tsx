@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 
 import { useMemoReducer } from '../../src';
 import { getCurrentHookValue } from '../helpers';
@@ -8,7 +8,7 @@ jest.mock('../../src/hooks/useReduxDevtools/useReduxDevtools');
 jest.mock('../../src/hooks/useReduxDevtools/helpers');
 
 describe('devTools', () => {
-  it('should dispatch an action to the Redux Dev Tools Extension when one is enabled', () => {
+  it('should dispatch an action to the Redux Dev Tools Extension when one is enabled', async () => {
     const mockDispatchToDevtools = jest.fn();
 
     (useReduxDevtools.useCreateReduxDevtools as jest.Mock).mockImplementation(() => ({
@@ -26,10 +26,13 @@ describe('devTools', () => {
     );
 
     const Action = { type: 'MOCK_ACTION' };
+    await act(async () => {
+      customDispatch(Action);
+    });
 
-    customDispatch(Action);
-
-    expect(mockDispatchToDevtools).toHaveBeenCalledWith(Action);
-    expect(mockDispatchToDevtools).toHaveBeenCalledTimes(1);
+    waitFor(() => {
+      expect(mockDispatchToDevtools).toHaveBeenCalledWith(Action);
+      expect(mockDispatchToDevtools).toHaveBeenCalledTimes(1);
+    });
   });
 });

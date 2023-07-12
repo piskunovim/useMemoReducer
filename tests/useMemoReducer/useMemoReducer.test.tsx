@@ -1,21 +1,25 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react';
 
-import { useMemoReducer } from '../../src';
 import {
-  CHANGE_OBJECT_SELECTOR,
+  SimpleComponent,
   COUNT_VALUE_SELECTOR,
+  CHANGE_OBJECT_SELECTOR,
   DECREMENT_SELECTOR,
-  DefaultTestComponent,
   INCREMENT_SELECTOR,
   OBJECT_VALUE_SELECTOR,
-  SIDE_EFFECT_RENDER_COUNT_SELECTOR,
-  TestComponentWithoutRenders,
-} from './defaultComponent';
+  CURENT_RENDERS_COUNT_SELECTOR,
+  ALL_RENDERS_COUNT_SELECTOR,
+} from './SimleComponent';
+import {
+  COUNTER_CURENT_RENDERS_COUNT_SELECTOR,
+  ComponentWithContext,
+  OBJECT_VIEWER_CURENT_RENDERS_COUNT_SELECTOR,
+} from './ComponentWithContext';
 
 describe('useMemoReducer', () => {
   it('should initialize correctly', () => {
-    const { getByTestId } = render(<DefaultTestComponent />);
+    const { getByTestId } = render(<SimpleComponent />);
     const countValue = getByTestId(COUNT_VALUE_SELECTOR);
     const objectValue = getByTestId(OBJECT_VALUE_SELECTOR);
 
@@ -24,7 +28,7 @@ describe('useMemoReducer', () => {
   });
 
   it('should handle increment and decrement correctly', () => {
-    const { getByTestId } = render(<DefaultTestComponent />);
+    const { getByTestId } = render(<SimpleComponent />);
     const decrementButton = getByTestId(DECREMENT_SELECTOR);
     const incrementButton = getByTestId(INCREMENT_SELECTOR);
     const countValue = getByTestId(COUNT_VALUE_SELECTOR);
@@ -32,14 +36,15 @@ describe('useMemoReducer', () => {
     expect(countValue.textContent).toBe('0');
 
     fireEvent.click(incrementButton);
-    expect(countValue.textContent).toBe('1');
+    fireEvent.click(incrementButton);
+    expect(countValue.textContent).toBe('2');
 
     fireEvent.click(decrementButton);
-    expect(countValue.textContent).toBe('0');
+    expect(countValue.textContent).toBe('1');
   });
 
   it('should have the correct state after multiple different actions', () => {
-    const { getByTestId } = render(<DefaultTestComponent />);
+    const { getByTestId } = render(<SimpleComponent />);
     const decrementButton = getByTestId(DECREMENT_SELECTOR);
     const incrementButton = getByTestId(INCREMENT_SELECTOR);
     const countValue = getByTestId('count-value');
@@ -53,90 +58,73 @@ describe('useMemoReducer', () => {
     expect(countValue.textContent).toBe('1');
   });
 
-  it('should change part of the State which was changed', () => {
-    const { getByTestId } = render(<DefaultTestComponent />);
+  it('shouldn`t fire a useEffect correctly when a part of the state wasn`t changed', () => {
+    const { getByTestId } = render(<SimpleComponent />);
     const incrementButton = getByTestId(INCREMENT_SELECTOR);
-    const sideEffectRenderCount = getByTestId(SIDE_EFFECT_RENDER_COUNT_SELECTOR);
+    const decrementButton = getByTestId(DECREMENT_SELECTOR);
+    const allRendersCount = getByTestId(ALL_RENDERS_COUNT_SELECTOR);
+    const currentRendersCount = getByTestId(CURENT_RENDERS_COUNT_SELECTOR);
     const countValue = getByTestId(COUNT_VALUE_SELECTOR);
     const objectValue = getByTestId(OBJECT_VALUE_SELECTOR);
+    const initialAllRenders = allRendersCount.textContent;
 
-    expect(sideEffectRenderCount.textContent).toBe('0');
+    expect(initialAllRenders).toBe('1');
 
     fireEvent.click(incrementButton);
     fireEvent.click(incrementButton);
+    fireEvent.click(incrementButton);
+    fireEvent.click(decrementButton);
 
-    expect(sideEffectRenderCount.textContent).toBe('0');
+    expect(currentRendersCount.textContent).toBe('0');
+    expect(allRendersCount.textContent).toBe('5');
     expect(countValue.textContent).toBe('2');
     expect(objectValue.textContent).toBe(JSON.stringify({ value: 'Some value' }));
   });
 
-  it('shouldn`t re-render a component when own properties weren`t changed', () => {
-    const { getByTestId } = render(<TestComponentWithoutRenders />);
-    const incrementButton = getByTestId(INCREMENT_SELECTOR);
-    const sideEffectRenderCount = getByTestId(SIDE_EFFECT_RENDER_COUNT_SELECTOR);
-
-    expect(sideEffectRenderCount.textContent).toBe('0');
-
-    fireEvent.click(incrementButton);
-    fireEvent.click(incrementButton);
-    fireEvent.click(incrementButton);
-
-    expect(sideEffectRenderCount.textContent).toBe('0');
-  });
-
-  it('should re-render a component when own properties were changed', () => {
-    const { getByTestId } = render(<DefaultTestComponent />);
+  it('should fire a useEffect correctly when a part of the state was changed', () => {
+    const { getByTestId } = render(<SimpleComponent />);
     const changeObjectButton = getByTestId(CHANGE_OBJECT_SELECTOR);
-    const sideEffectRenderCount = getByTestId(SIDE_EFFECT_RENDER_COUNT_SELECTOR);
+    const allRendersCount = getByTestId(ALL_RENDERS_COUNT_SELECTOR);
+    const currentRendersCount = getByTestId(CURENT_RENDERS_COUNT_SELECTOR);
     const objectValue = getByTestId(OBJECT_VALUE_SELECTOR);
+    const initialAllRenders = allRendersCount.textContent;
+    const initialCurrentRenders = currentRendersCount.textContent;
 
-    expect(sideEffectRenderCount.textContent).toBe('0');
+    expect(initialAllRenders).toBe('1');
+    expect(initialCurrentRenders).toBe('0');
 
     fireEvent.click(changeObjectButton);
     fireEvent.click(changeObjectButton);
 
-    expect(sideEffectRenderCount.textContent).toBe('2');
+    expect(allRendersCount.textContent).toBe('3');
+    expect(currentRendersCount.textContent).toBe('2');
     expect(objectValue.textContent).toBe(JSON.stringify({ value: 'Some value changed' }));
   });
+});
 
-  it('should handle array state using useSelector', () => {
-    type State = string[];
-    enum Action {
-      ADD_ITEM = 'ADD_ITEM',
-    }
-    type Actions = { type: Action.ADD_ITEM; payload: string };
+describe('useMemoReducer with with the ContextApi', () => {
+  it('should rerender only a component which data was changed', () => {
+    const { getByTestId } = render(<ComponentWithContext />);
+    const incrementButton = getByTestId(INCREMENT_SELECTOR);
+    const decrementButton = getByTestId(DECREMENT_SELECTOR);
+    const counterCurrentRendersCount = getByTestId(COUNTER_CURENT_RENDERS_COUNT_SELECTOR);
+    const objectViewerCurrentRendersCount = getByTestId(OBJECT_VIEWER_CURENT_RENDERS_COUNT_SELECTOR);
+    const countValue = getByTestId(COUNT_VALUE_SELECTOR);
+    const objectValue = getByTestId(OBJECT_VALUE_SELECTOR);
+    const initialCounterCurrentRenders = counterCurrentRendersCount.textContent;
+    const initialObjectViewerCounterCurrentRenders = objectViewerCurrentRendersCount.textContent;
 
-    type Props = {
-      onItemsUpdate: (items: string[]) => void;
-    };
-    const ArrayStateTestComponent = ({ onItemsUpdate }: Props) => {
-      const [useSelector, dispatch] = useMemoReducer((state: State, action: Actions) => {
-        switch (action.type) {
-          case Action.ADD_ITEM:
-            return [...state, action.payload];
-          default:
-            return state;
-        }
-      }, []);
+    expect(initialCounterCurrentRenders).toBe('0');
+    expect(initialObjectViewerCounterCurrentRenders).toBe('0');
 
-      const items = useSelector((state) => state);
+    fireEvent.click(incrementButton);
+    fireEvent.click(incrementButton);
+    fireEvent.click(incrementButton);
+    fireEvent.click(decrementButton);
 
-      React.useEffect(() => {
-        dispatch({ type: Action.ADD_ITEM, payload: 'Item 1' });
-      }, [dispatch]);
-
-      React.useEffect(() => {
-        onItemsUpdate(items);
-      }, [items, onItemsUpdate]);
-
-      return null;
-    };
-
-    const handleItemsUpdate = jest.fn();
-
-    render(<ArrayStateTestComponent onItemsUpdate={handleItemsUpdate} />);
-
-    // Ensure that the mock function was called with the expected items array
-    expect(handleItemsUpdate).toHaveBeenCalledWith(expect.arrayContaining(['Item 1']));
+    expect(counterCurrentRendersCount.textContent).toBe('4');
+    expect(objectViewerCurrentRendersCount.textContent).toBe('0');
+    expect(countValue.textContent).toBe('2');
+    expect(objectValue.textContent).toBe(JSON.stringify({ value: 'Some value' }));
   });
 });
