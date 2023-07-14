@@ -10,7 +10,7 @@ import {
   OBJECT_VALUE_SELECTOR,
   CURENT_RENDERS_COUNT_SELECTOR,
   ALL_RENDERS_COUNT_SELECTOR,
-} from './SimleComponent';
+} from './SimpleComponent';
 import {
   COUNTER_CURENT_RENDERS_COUNT_SELECTOR,
   ComponentWithContext,
