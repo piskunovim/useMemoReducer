@@ -81,10 +81,12 @@ const ObjectViewer: FC<PropsWithChildren> = () => {
   const object = useSelector((state) => state.object);
 
   useWhenIsNotFirstRender(() => {
+    /* istanbul ignore next */
     updateRender((renders) => renders + 1);
   }, [object, increment, decrement]);
 
   useWhenIsNotFirstRender(() => {
+    /* istanbul ignore next */
     updateRender((renders) => renders + 1);
   });
 
