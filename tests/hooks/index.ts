@@ -1,3 +1,3 @@
-export { useIsFirstRender } from './useIsFirstRender';
+export { useDidMount } from './useDidMount';
 
-export { useWhenIsNotFirstRender } from './useWhenIsNotFirstRender';
+export { useDidUpdate } from './useDidUpdate';

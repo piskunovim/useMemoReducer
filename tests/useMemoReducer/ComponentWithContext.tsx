@@ -2,7 +2,7 @@ import React, { FC, PropsWithChildren, createContext, useCallback, useContext, u
 
 import { UseSelector, useMemoReducer } from '../../src';
 import { Action, State, Thunk, initialState, reducer } from './reducer';
-import { useWhenIsNotFirstRender } from '../hooks';
+import { useDidUpdate } from '../hooks';
 
 type Context = {
   increment: () => void;
@@ -56,7 +56,7 @@ const Counter: FC<PropsWithChildren> = () => {
 
   const count = useSelector((state) => state.count);
 
-  useWhenIsNotFirstRender(() => {
+  useDidUpdate(() => {
     updateRender((renders) => renders + 1);
   }, [count]);
 
@@ -80,12 +80,12 @@ const ObjectViewer: FC<PropsWithChildren> = () => {
 
   const object = useSelector((state) => state.object);
 
-  useWhenIsNotFirstRender(() => {
+  useDidUpdate(() => {
     /* istanbul ignore next */
     updateRender((renders) => renders + 1);
   }, [object, increment, decrement]);
 
-  useWhenIsNotFirstRender(() => {
+  useDidUpdate(() => {
     /* istanbul ignore next */
     updateRender((renders) => renders + 1);
   });

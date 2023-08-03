@@ -1,16 +1,16 @@
 import { DependencyList, EffectCallback, useEffect, useRef } from 'react';
 
-import { useIsFirstRender } from './useIsFirstRender';
+import { useDidMount } from './useDidMount';
 
-export const useWhenIsNotFirstRender = (callback: EffectCallback, depends: DependencyList = []) => {
-  const isFirstRender = useIsFirstRender();
+export const useDidUpdate = (callback: EffectCallback, depends: DependencyList = []) => {
+  const isMounted = useDidMount();
 
   const callbackRef = useRef<EffectCallback | null>(null);
 
   callbackRef.current = callback;
 
   useEffect(() => {
-    if (isFirstRender) {
+    if (isMounted) {
       return;
     }
 

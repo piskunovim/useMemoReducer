@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useState } from 'react';
 
 import { useMemoReducer } from '../../src';
-import { useWhenIsNotFirstRender } from '../hooks';
+import { useDidUpdate } from '../hooks';
 import { Action, State, Actions, reducer as defaultReducer, initialState as defaultInitialState } from './reducer';
 
 export const ALL_RENDERS_COUNT_SELECTOR = 'all-renders-count';
@@ -31,7 +31,7 @@ export const SimpleComponent: FC<Props> = ({ reducer = defaultReducer, initialSt
     updateAllRenders((renders) => renders + 1);
   }, [obj, count]);
 
-  useWhenIsNotFirstRender(() => {
+  useDidUpdate(() => {
     updateCurrentRenders((renders) => renders + 1);
   }, [obj]);
 
