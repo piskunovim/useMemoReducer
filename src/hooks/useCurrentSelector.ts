@@ -41,7 +41,7 @@ export const useCurrentSelector: UseCurrentSelector = (selector, store, { subscr
     isSubscribed.current = true;
 
     return cleanUp;
-  }, [checkForUpdates, subscribe]);
+  }, [checkForUpdates, cleanUp, subscribe]);
 
   return selectedStateRef.current;
 };
