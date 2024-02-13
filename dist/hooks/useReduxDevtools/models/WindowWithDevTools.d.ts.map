@@ -1,0 +1,1 @@
+{"version":3,"file":"WindowWithDevTools.d.ts","sourceRoot":"","sources":["../../../../src/hooks/useReduxDevtools/models/WindowWithDevTools.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,kBAAkB,EAAE,MAAM,cAAc,CAAC;AAClD,OAAO,EAAE,sBAAsB,EAAE,MAAM,0BAA0B,CAAC;AAElE,MAAM,MAAM,kBAAkB,GAAG,MAAM,GAAG;IACxC,CAAC,kBAAkB,CAAC,EAAE,sBAAsB,CAAC;CAC9C,CAAC"}

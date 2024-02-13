@@ -1,3 +1,4 @@
+// @ts-ignore
 import { EnhancerOptions } from 'redux-devtools-extension';
 
 import { ReduxDevtoolsExtensionConnection } from './ReduxDevtoolsExtensionConnection';

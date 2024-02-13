@@ -1,11 +1,13 @@
 {
   "name": "use-memo-reducer",
-  "version": "0.7.8",
+  "version": "0.7.9",
   "description": "A custom React hook for memoized reducers",
   "main": "dist/index.js",
   "repository": "github:piskunovim/useMemoReducer",
   "scripts": {
-    "build": "rollup -c",
+    "build:types": "tsc --emitDeclarationOnly",
+    "build:js": "rollup -c",
+    "build": "npm run build:types && npm run build:js",
     "test": "jest",
     "size": "size-limit"
   },
