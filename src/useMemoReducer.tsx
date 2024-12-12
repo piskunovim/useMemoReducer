@@ -23,6 +23,7 @@ export const useMemoReducer = <S, A, O>(
 
   const getState = useCallback((): S => storeRef.current, []);
 
+  // @ts-expect-error ts(2322)
   const customDispatch: Dispatch<S, A> = useCallback(
     (action: A | ThunkAction<S, A>) => {
       if (isThunk<S, A>(action)) {
