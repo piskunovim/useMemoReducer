@@ -29,13 +29,6 @@ const createConnection = (
   return devtoolsExt.connect({ name: getUniqueName(name), trace: true, instanceId: getUniqueName(name) });
 };
 
-const getStackTrace = (): string => {
-  const obj: { stack?: string } = {};
-  Error.captureStackTrace(obj, getStackTrace);
-
-  return obj?.stack ?? '';
-};
-
 const connections = new Map<string, ReduxDevtoolsExtensionConnection[]>([]);
 
 const parseConnectionName = (connectionName: string): [string, number] => {
@@ -59,6 +52,8 @@ export const getConnectionName = (options?: UseMemoReducerOptions): string => {
 
 const removeConnection = (connectionName: string): void => {
   const [name, index] = parseConnectionName(connectionName);
+
+  console.log(`[useMemoReducer] Disconnecting connection ...`, { connections });
 
   const connectionsByName = connections.get(name) ?? [];
   const currentConnection = connectionsByName[index];
@@ -102,6 +97,8 @@ export const connect = (connectionName: string, state: unknown): null | ReduxDev
 
   connections.set(name, [...connectionsByName, newConnection]);
   newConnection.init(state);
+
+  console.log('[useMemoReducer] Connection was created', { connections });
 
   return newConnection;
 };

@@ -12,5 +12,5 @@
     "outDir": "./dist"
   },
   "include": ["src/**/*"],
-  "exclude": ["test"]
+  "exclude": ["tests"]
 }

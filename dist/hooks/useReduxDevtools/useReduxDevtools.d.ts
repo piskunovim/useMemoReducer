@@ -1,8 +1,9 @@
-import { Reducer } from 'react';
-type ReturnType<A> = {
+import { ReduxDevtoolsExtensionConnection } from './models';
+type ReturnType<A, S> = {
     devtoolsEnabled: () => boolean;
-    dispatchToDevtools?: (action: A) => void;
+    dispatchToDevtools?: (action: A, state: S) => void;
+    connection?: ReduxDevtoolsExtensionConnection;
 };
-export declare const useCreateReduxDevtools: <S, A, O>(reducer: Reducer<S, A>, initialState: S, options?: O | undefined) => ReturnType<A>;
+export declare const useReduxDevtools: <S, A, O>(noneReactiveState: S, options?: O | undefined) => ReturnType<A, S>;
 export {};
 //# sourceMappingURL=useReduxDevtools.d.ts.map

@@ -1,7 +1,7 @@
-import { Reducer, useCallback, useLayoutEffect, useMemo, useReducer, useRef } from 'react';
+import { Reducer, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useCurrentSelector as currentSelector } from './hooks/useCurrentSelector';
-import { useCreateReduxDevtools } from './hooks/useReduxDevtools/useReduxDevtools';
+import { useReduxDevtools } from './hooks/useReduxDevtools/useReduxDevtools';
 import { Dispatch, ThunkAction, Subscriber, Subscribers, UseSelector } from './models';
 import { isThunk } from './helpers';
 
@@ -10,33 +10,59 @@ export const useMemoReducer = <S, A, O>(
   initialState: S,
   options?: O,
 ): [UseSelector<S>, Dispatch<S, A>] => {
-  const devtools = useCreateReduxDevtools(reducer, initialState, options);
-  const devtoolsRef = useRef(devtools);
-  devtoolsRef.current = devtools;
+  const initialStateRef = useRef(initialState);
+  const [state, setState] = useState(initialStateRef.current);
 
-  const [store, dispatch] = useReducer(reducer, initialState);
+  const noneReactiveState = useRef(state);
+  noneReactiveState.current = state;
+  const getState = useCallback((): S => noneReactiveState.current, []);
 
-  const storeRef = useRef(store);
-  storeRef.current = store;
+  const devtools = useReduxDevtools(noneReactiveState.current, options);
+
+  // useEffect(() => {
+  //   console.log('devtools was changed', { devtools: JSON.stringify(devtools) });
+  // }, [devtools]);
+
+  useEffect(() => {
+    if (devtools.devtoolsEnabled()) {
+      // @ts-expect-error ts(2322)
+      devtools.connection.subscribe((p) => {
+        // // @ts-expect-error ts(2322)
+        console.log('[useMemoReducer] Devtools state changed', { p });
+        // @ts-expect-error ts(2322)
+        if (p.type === 'DISPATCH' && p.payload.type === 'JUMP_TO_ACTION') {
+          // @ts-expect-error ts(2322)
+          console.log('Jump to state', { state: JSON.parse(p.state) });
+          // @ts-expect-error ts(2322)
+          setState(JSON.parse(p.state));
+        }
+        // @ts-expect-error ts(2322)
+        if (p.type === 'DISPATCH' && p.payload.type === 'RESET') {
+          console.log('Reset state');
+          setState(initialStateRef.current);
+        }
+      });
+    }
+  }, [devtools]);
 
   const subscribersRef = useRef<Subscribers<S>>(new Set([]));
 
-  const getState = useCallback((): S => storeRef.current, []);
-
   // @ts-expect-error ts(2322)
-  const customDispatch: Dispatch<S, A> = useCallback(
+  const enhancedDispatch: Dispatch<S, A> = useCallback(
     (action: A | ThunkAction<S, A>) => {
       if (isThunk<S, A>(action)) {
-        return action(customDispatch, getState);
+        return action(enhancedDispatch, getState);
       }
 
-      if (devtoolsRef.current.devtoolsEnabled()) {
-        devtoolsRef.current.dispatchToDevtools?.(action);
+      const newState = reducer(noneReactiveState.current, action);
+
+      if (devtools.devtoolsEnabled()) {
+        devtools.dispatchToDevtools?.(action, newState);
       }
 
-      return dispatch(action);
+      return setState(newState);
     },
-    [dispatch, getState],
+    [getState, devtools],
   );
 
   const subscribe = useCallback((subscriber: Subscriber<S>) => {
@@ -55,8 +81,8 @@ export const useMemoReducer = <S, A, O>(
 
   useLayoutEffect(() => {
     // Notify all subscribers when store state changes
-    subscribersRef.current.forEach((sub) => sub(store));
-  }, [store]);
+    subscribersRef.current.forEach((sub) => sub(state));
+  }, [state]);
 
-  return useMemo(() => [useSelector, customDispatch], [customDispatch, useSelector]);
+  return useMemo(() => [useSelector, enhancedDispatch], [enhancedDispatch, useSelector]);
 };

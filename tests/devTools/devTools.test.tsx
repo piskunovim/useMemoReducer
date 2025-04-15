@@ -11,8 +11,11 @@ describe('devTools', () => {
   it('should dispatch an action to the Redux Dev Tools Extension when one is enabled', async () => {
     const mockDispatchToDevtools = jest.fn();
 
-    (useReduxDevtools.useCreateReduxDevtools as jest.Mock).mockImplementation(() => ({
+    (useReduxDevtools.useReduxDevtools as jest.Mock).mockImplementation(() => ({
       devtoolsEnabled: () => true,
+      connection: {
+        subscribe: () => console.log(),
+      },
       dispatchToDevtools: mockDispatchToDevtools,
     }));
 
