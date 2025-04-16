@@ -1,23 +1,28 @@
 import { Reducer, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
-import { useCurrentSelector as currentSelector } from './hooks/useCurrentSelector';
-import { useReduxDevtools } from './hooks/useReduxDevtools/useReduxDevtools';
+import { useCurrentSelector as currentSelector, useReduxDevtools, useCachedValue } from './hooks';
 import { Dispatch, ThunkAction, Subscriber, Subscribers, UseSelector } from './models';
 import { isThunk } from './helpers';
+import { UseMemoReducerOptions } from './hooks/useReduxDevtools/models';
 
 export const useMemoReducer = <S, A, O>(
   reducer: Reducer<S, A>,
   initialState: S,
-  options?: O,
+  options?: UseMemoReducerOptions,
 ): [UseSelector<S>, Dispatch<S, A>] => {
-  const initialStateRef = useRef(initialState);
-  const [state, setState] = useState(initialStateRef.current);
+  /**
+   * We have to set these values only once
+   */
+  const cachedOptions = useCachedValue(options);
+  const cachedInitialState = useCachedValue(initialState);
+  const cachedReducer = useCachedValue(reducer);
 
+  const [state, setState] = useState(cachedInitialState);
   const noneReactiveState = useRef(state);
   noneReactiveState.current = state;
   const getState = useCallback((): S => noneReactiveState.current, []);
 
-  const devtools = useReduxDevtools(noneReactiveState.current, options);
+  const devtools = useReduxDevtools(noneReactiveState, cachedOptions);
 
   // useEffect(() => {
   //   console.log('devtools was changed', { devtools: JSON.stringify(devtools) });
@@ -39,13 +44,11 @@ export const useMemoReducer = <S, A, O>(
         // @ts-expect-error ts(2322)
         if (p.type === 'DISPATCH' && p.payload.type === 'RESET') {
           console.log('Reset state');
-          setState(initialStateRef.current);
+          setState(cachedInitialState);
         }
       });
     }
-  }, [devtools]);
-
-  const subscribersRef = useRef<Subscribers<S>>(new Set([]));
+  }, [devtools, cachedInitialState]);
 
   // @ts-expect-error ts(2322)
   const enhancedDispatch: Dispatch<S, A> = useCallback(
@@ -54,16 +57,19 @@ export const useMemoReducer = <S, A, O>(
         return action(enhancedDispatch, getState);
       }
 
-      const newState = reducer(noneReactiveState.current, action);
+      const newState = cachedReducer(noneReactiveState.current, action);
 
       if (devtools.devtoolsEnabled()) {
+        // @ts-expect-error ts(2322)
         devtools.dispatchToDevtools?.(action, newState);
       }
 
       return setState(newState);
     },
-    [getState, devtools],
+    [getState, devtools, cachedReducer],
   );
+
+  const subscribersRef = useRef<Subscribers<S>>(new Set([]));
 
   const subscribe = useCallback((subscriber: Subscriber<S>) => {
     subscribersRef.current.add(subscriber);

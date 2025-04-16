@@ -11,8 +11,8 @@ type ReturnType<A, S> = {
   connection?: ReduxDevtoolsExtensionConnection;
 };
 
-export const useReduxDevtools = <S, A, O>(noneReactiveState: S, options?: O): ReturnType<A, S> => {
-  const [connectionName] = useState(() => getConnectionName(options as UseMemoReducerOptions));
+export const useReduxDevtools = <S, A>(noneReactiveState: S, options?: UseMemoReducerOptions): ReturnType<A, S> => {
+  const [connectionName] = useState(() => getConnectionName(options));
   const connection = useMemo(
     () => (isDevtoolsExist(connectionName) ? connect(connectionName, noneReactiveState) : null),
     [connectionName, noneReactiveState],
