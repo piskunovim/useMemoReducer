@@ -1,6 +1,6 @@
-import { Reducer, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Reducer, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
-import { useCurrentSelector as currentSelector, useReduxDevtools, useCachedValue } from './hooks';
+import { useCurrentSelector as currentSelector, useReduxDevtools, useCachedValue, useMainState } from './hooks';
 import { Dispatch, ThunkAction, Subscriber, Subscribers, UseSelector } from './models';
 import { isThunk } from './helpers';
 import { UseMemoReducerOptions } from './hooks/useReduxDevtools/models';
@@ -11,16 +11,12 @@ export const useMemoReducer = <S, A, O>(
   options?: UseMemoReducerOptions,
 ): [UseSelector<S>, Dispatch<S, A>] => {
   /**
-   * We have to set these values only once
+   * We must set these values only once
    */
   const cachedOptions = useCachedValue(options);
-  const cachedInitialState = useCachedValue(initialState);
   const cachedReducer = useCachedValue(reducer);
 
-  const [state, setState] = useState(cachedInitialState);
-  const noneReactiveState = useRef(state);
-  noneReactiveState.current = state;
-  const getState = useCallback((): S => noneReactiveState.current, []);
+  const { state, noneReactiveState, cachedInitialState, setState, getState } = useMainState(initialState);
 
   const devtools = useReduxDevtools(noneReactiveState, cachedOptions);
 
