@@ -2,7 +2,6 @@
 **/build/**
 **/dist/**
 **/.git*/**
-
 tests/
 **/*.test.ts
 **/*.test.tsx

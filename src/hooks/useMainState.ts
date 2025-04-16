@@ -18,6 +18,6 @@ export const useMainState = <S>(initialState: S) => {
       setState,
       getState,
     }),
-    [state, getState],
+    [state, cachedInitialState, getState],
   );
 };

@@ -5,7 +5,7 @@ import { Dispatch, ThunkAction, Subscriber, Subscribers, UseSelector } from './m
 import { isThunk } from './helpers';
 import { UseMemoReducerOptions } from './hooks/useReduxDevtools/models';
 
-export const useMemoReducer = <S, A, O>(
+export const useMemoReducer = <S, A>(
   reducer: Reducer<S, A>,
   initialState: S,
   options?: UseMemoReducerOptions,
@@ -19,10 +19,6 @@ export const useMemoReducer = <S, A, O>(
   const { state, noneReactiveState, cachedInitialState, setState, getState } = useMainState(initialState);
 
   const devtools = useReduxDevtools(noneReactiveState, cachedOptions);
-
-  // useEffect(() => {
-  //   console.log('devtools was changed', { devtools: JSON.stringify(devtools) });
-  // }, [devtools]);
 
   useEffect(() => {
     if (devtools.devtoolsEnabled()) {
@@ -44,7 +40,7 @@ export const useMemoReducer = <S, A, O>(
         }
       });
     }
-  }, [devtools, cachedInitialState]);
+  }, [devtools, cachedInitialState, setState]);
 
   // @ts-expect-error ts(2322)
   const enhancedDispatch: Dispatch<S, A> = useCallback(
@@ -62,7 +58,7 @@ export const useMemoReducer = <S, A, O>(
 
       return setState(newState);
     },
-    [getState, devtools, cachedReducer],
+    [cachedReducer, noneReactiveState, devtools, setState, getState],
   );
 
   const subscribersRef = useRef<Subscribers<S>>(new Set([]));
