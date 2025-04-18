@@ -1,3 +1,3 @@
 export type UseMemoReducerOptions = {
-  devtoolsName?: string;
+  id?: string;
 };

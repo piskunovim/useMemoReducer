@@ -1,4 +1,4 @@
 export type UseMemoReducerOptions = {
-    devtoolsName?: string;
+    id?: string;
 };
 //# sourceMappingURL=UseMemoReducerOptions.d.ts.map

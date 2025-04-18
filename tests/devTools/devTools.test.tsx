@@ -12,11 +12,11 @@ describe('devTools', () => {
     const mockDispatchToDevtools = jest.fn();
 
     (useReduxDevtools.useReduxDevtools as jest.Mock).mockImplementation(() => ({
-      devtoolsEnabled: () => true,
+      isExist: () => true,
       connection: {
         subscribe: () => console.log(),
       },
-      dispatchToDevtools: mockDispatchToDevtools,
+      dispatch: mockDispatchToDevtools,
     }));
 
     const [, customDispatch] = getCurrentHookValue(
