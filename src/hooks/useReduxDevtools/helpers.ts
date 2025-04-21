@@ -25,19 +25,19 @@ export function connect(id: string, state: unknown): null | ConnectionWithId {
 }
 
 export function disconnect(connection: ConnectionWithId | null): void {
-  const res = removeConnection(connectionsPool, connection);
+  const result = removeConnection(connectionsPool, connection);
 
-  if (!res.connection) {
-    console.warn(`[useReduxDevtools] Connection was not created.`);
+  if (!result.connection) {
+    console.warn(`[useReduxDevtools] Connection was not removed.`);
 
     return;
   }
 
-  connectionsPool = res.connectionsPool;
+  connectionsPool = result.connectionsPool;
 
   console.log('After remove', { connectionsPool });
 
-  disconnectObserver.emit();
+  disconnectObserver.emit(result);
 }
 
 export function isExist(connection: ConnectionWithId | null): connection is ConnectionWithId {

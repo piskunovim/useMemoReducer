@@ -1,9 +1,10 @@
 /* eslint-disable react-hooks/rules-of-hooks */
-import { MutableRefObject, useCallback, useEffect, useMemo, useRef } from 'react';
+import { MutableRefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
 import { connect, disconnect, isExist } from './helpers';
 import { disconnectObserver } from './DisconnectObserver';
 import { ReduxDevtoolsExtensionConnection, UseMemoReducerOptions } from './models';
+import { ConnectionWithId, getConnectionById, Return } from './connections';
 
 type ReturnType<A, S> = {
   dispatch: (action: A, state: S) => void;
@@ -15,29 +16,37 @@ export const useReduxDevtools = <S, A>(
   options?: UseMemoReducerOptions,
   listeners?: (change: unknown) => void,
 ): ReturnType<A, S> => {
-  const connection = useMemo(
-    () => connect(options?.id ?? '', noneReactiveState.current),
-    [noneReactiveState, options?.id],
-  );
+  const connectionRef = useRef<ConnectionWithId | null>(null);
+  useLayoutEffect(() => {
+    connectionRef.current = connect(options?.id ?? '', noneReactiveState.current);
+  }, [noneReactiveState, options?.id]);
+
   const onListenersRef = useRef(listeners);
   onListenersRef.current = listeners;
 
   const unsubscribe = useRef<() => void | null>();
 
   const subscribe = useCallback(() => {
-    console.log('SUBSCRIBE...', { connection, onListenersRef });
+    console.log('SUBSCRIBE...', { connection: connectionRef.current, onListenersRef });
 
     unsubscribe.current?.();
 
-    return connection?.subscribe(onListenersRef.current);
-  }, [connection]);
+    return connectionRef.current?.subscribe(onListenersRef.current);
+  }, []);
 
-  const reconnect = useCallback(() => {
-    console.log('RECONNECT...', { connection });
+  const reconnect = useCallback(
+    (payload: Return) => {
+      console.log('RECONNECT...', { connection: connectionRef.current, payload });
+      if (!isExist(connectionRef.current)) {
+        return;
+      }
 
-    unsubscribe.current = subscribe();
-    connection?.send({ type: '@@RECONNECT' }, noneReactiveState.current);
-  }, [connection, noneReactiveState, subscribe]);
+      connectionRef.current = getConnectionById(payload.connectionsPool, connectionRef.current.id);
+      unsubscribe.current = subscribe();
+      connectionRef.current?.send({ type: '@@RECONNECT' }, noneReactiveState.current);
+    },
+    [noneReactiveState, subscribe],
+  );
 
   useEffect(() => {
     disconnectObserver.subscribe(reconnect);
@@ -48,28 +57,25 @@ export const useReduxDevtools = <S, A>(
   }, [reconnect]);
 
   useEffect(() => {
-    if (!isExist(connection)) {
+    if (!isExist(connectionRef.current)) {
       return;
     }
 
     unsubscribe.current = subscribe();
 
     return () => {
-      if (!isExist(connection)) {
+      if (!isExist(connectionRef.current)) {
         return;
       }
 
       unsubscribe.current?.();
-      disconnect(connection);
+      disconnect(connectionRef.current);
     };
-  }, [connection, subscribe]);
+  }, [subscribe]);
 
-  const dispatch = useCallback(
-    (action: A, state: S) => {
-      connection?.send(action, state);
-    },
-    [connection],
-  );
+  const dispatch = useCallback((action: A, state: S) => {
+    connectionRef.current?.send(action, state);
+  }, []);
 
-  return useMemo(() => ({ dispatch, connection }), [dispatch, connection]);
+  return useMemo(() => ({ dispatch, connection: connectionRef.current }), [dispatch]);
 };

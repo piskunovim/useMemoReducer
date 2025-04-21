@@ -17,10 +17,52 @@ export function createConnectionsPool(): ConnectionsPool {
   };
 }
 
-type Return = {
+export type Return = {
   connection: ConnectionWithId | null;
   connectionsPool: ConnectionsPool;
 };
+
+function getBaseId(uniqueId: string) {
+  return uniqueId.split('/')[0];
+}
+
+function refreshConnection(connectionsPool: ConnectionsPool, uniqueId: string, lastNext: number): Return {
+  if (!uniqueId) {
+    return { connection: null, connectionsPool };
+  }
+
+  const byId = { ...connectionsPool.byId };
+  const lookup = { ...connectionsPool.lookup };
+
+  const baseId = getBaseId(uniqueId);
+
+  let baseState = byId[baseId] || { connections: [], next: lastNext };
+
+  let newId = uniqueId;
+  if (baseState.connections.length > 0) {
+    baseState = { ...baseState, next: lastNext };
+  }
+
+  const connection = createConnection(newId);
+
+  if (!connection) {
+    return {
+      connection: null,
+      connectionsPool,
+    };
+  }
+
+  const newConnections = [...baseState.connections, connection];
+
+  byId[baseId] = { ...baseState, connections: newConnections };
+
+  lookup[newId] = connection;
+
+  return {
+    connection,
+    connectionsPool: { byId, lookup },
+  };
+}
 
 export function addConnection(connectionsPool: ConnectionsPool, baseId: string): Return {
   if (!baseId) {
@@ -77,23 +119,12 @@ export function removeConnection(connectionsPool: ConnectionsPool, connection: C
 
   delete lookup[connection.id];
 
-  const baseId = connection.id.split('/')[0];
+  const baseId = getBaseId(connection.id);
 
   const baseState = byId[baseId];
   const newConnections = baseState.connections.filter((conn) => conn.id !== connection.id);
 
   connection.unsubscribe();
-
-  if (newConnections.length === 0) {
-    delete byId[baseId];
-
-    const newConnectionsPool = refreshActiveConnections({
-      byId,
-      lookup,
-    });
-
-    return { connection, connectionsPool: newConnectionsPool };
-  }
 
   byId[baseId] = { ...baseState, connections: newConnections };
 
@@ -135,8 +166,10 @@ export function refreshActiveConnections(connectionsPool: ConnectionsPool): Conn
 
   let newPool: ConnectionsPool = createConnectionsPool();
 
-  Object.keys(connectionsPool.lookup).forEach((baseId) => {
-    newPool = addConnection(newPool, baseId.split('/')[0]).connectionsPool;
+  Object.keys(connectionsPool.lookup).forEach((uniqueId) => {
+    const { next } = connectionsPool.byId[getBaseId(uniqueId)];
+
+    newPool = refreshConnection(newPool, uniqueId, next).connectionsPool;
   });
 
   console.log('Connections after refresh...', { connectionsPool, newPool });

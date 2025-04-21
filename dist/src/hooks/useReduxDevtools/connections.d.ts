@@ -16,7 +16,7 @@ type ConnectionsPool = {
     lookup: Lookup;
 };
 export declare function createConnectionsPool(): ConnectionsPool;
-type Return = {
+export type Return = {
     connection: ConnectionWithId | null;
     connectionsPool: ConnectionsPool;
 };
