@@ -1,6 +1,12 @@
 import { Reducer, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 
-import { useCurrentSelector as currentSelector, useReduxDevtools, useCachedValue, useMainState } from './hooks';
+import {
+  useCurrentSelector as currentSelector,
+  useReduxDevtools,
+  useCachedValue,
+  useMainState,
+  useTimeline,
+} from './hooks';
 import { Dispatch, ThunkAction, Subscriber, Subscribers, UseSelector } from './models';
 import { isThunk } from './helpers';
 import { UseMemoReducerOptions } from './hooks/useReduxDevtools/models';
@@ -18,27 +24,9 @@ export const useMemoReducer = <S, A>(
 
   const { state, noneReactiveState, cachedInitialState, setState, getState } = useMainState(initialState);
 
-  const listeners = useCallback(
-    (p: unknown) => {
-      // // @ts-expect-error ts(2322)
-      console.log('[useMemoReducer] Devtools state changed', { p });
-      // @ts-expect-error ts(2322)
-      if (p.type === 'DISPATCH' && p.payload.type === 'JUMP_TO_ACTION') {
-        // @ts-expect-error ts(2322)
-        console.log('Jump to state', { state: JSON.parse(p.state) });
-        // @ts-expect-error ts(2322)
-        setState(JSON.parse(p.state));
-      }
-      // @ts-expect-error ts(2322)
-      if (p.type === 'DISPATCH' && p.payload.type === 'RESET') {
-        console.log('Reset state');
-        setState(cachedInitialState);
-      }
-    },
-    [cachedInitialState, setState],
-  );
+  const timelineListener = useTimeline(setState, cachedInitialState);
 
-  const devtools = useReduxDevtools(noneReactiveState, cachedOptions, listeners);
+  const devtools = useReduxDevtools(noneReactiveState, cachedOptions, timelineListener);
 
   // @ts-expect-error ts(2322)
   const enhancedDispatch: Dispatch<S, A> = useCallback(

@@ -1,3 +1,4 @@
+export { useTimeline } from './useTimeline';
 export { useMainState } from './useMainState';
 export { useCachedValue } from './useCachedValue';
 export { useCurrentSelector } from './useCurrentSelector';
