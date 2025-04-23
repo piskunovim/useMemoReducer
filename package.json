@@ -38,18 +38,6 @@
       "limit": "10 KB"
     }
   ],
-  "jest": {
-    "testEnvironment": "jsdom",
-    "collectCoverage": true,
-    "coverageReporters": [
-      "text",
-      "json",
-      "lcov"
-    ],
-    "coveragePathIgnorePatterns": [
-      "src/hooks/useReduxDevtools"
-    ]
-  },
   "lint-staged": {
     "*.{ts,tsx}": [
       "eslint --fix",
