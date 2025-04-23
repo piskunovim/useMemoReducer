@@ -1,4 +1,4 @@
-import { Return } from './connections';
+import { Return } from './connectionModule';
 
 type Observer = (payload: Return) => void;
 

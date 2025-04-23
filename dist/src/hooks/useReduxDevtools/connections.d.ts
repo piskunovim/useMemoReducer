@@ -1,4 +1,4 @@
-import { ReduxDevtoolsExtension, ReduxDevtoolsExtensionConnection } from './models';
+import { ReduxDevtoolsExtensionConnection } from './models';
 export type ConnectionWithId = ReduxDevtoolsExtensionConnection & {
     id: string;
 };
@@ -11,7 +11,7 @@ type ById = {
 type Lookup = {
     [key: string]: ConnectionWithId;
 };
-type ConnectionsPool = {
+export type ConnectionsPool = {
     byId: ById;
     lookup: Lookup;
 };
@@ -20,11 +20,10 @@ export type Return = {
     connection: ConnectionWithId | null;
     connectionsPool: ConnectionsPool;
 };
-export declare function addConnection(connectionsPool: ConnectionsPool, baseId: string): Return;
+export declare function addConnection(connectionsPool: ConnectionsPool, baseId: string, connectionFactory?: typeof createConnection): Return;
 export declare function getConnections(connectionsPool: ConnectionsPool, baseId: string): ReduxDevtoolsExtensionConnection[];
 export declare function getConnectionById(connectionsPool: ConnectionsPool, uniqueId: string): ConnectionWithId;
 export declare function removeConnection(connectionsPool: ConnectionsPool, connection: ConnectionWithId | null): Return;
-export declare function withDevTools(): false | ReduxDevtoolsExtension;
-export declare function refreshActiveConnections(connectionsPool: ConnectionsPool): ConnectionsPool;
+export declare function createConnection(id: string): null | ConnectionWithId;
 export {};
 //# sourceMappingURL=connections.d.ts.map

@@ -1,10 +1,11 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { MutableRefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
-import { connect, disconnect, isExist } from './helpers';
+import { connect, disconnect, getConnection, isExist } from './helpers';
 import { disconnectObserver } from './DisconnectObserver';
 import { ReduxDevtoolsExtensionConnection, UseMemoReducerOptions } from './models';
-import { ConnectionWithId, getConnectionById, Return } from './connections';
+
+import { ConnectionWithId, Return } from './connectionModule';
 
 type ReturnType<A, S> = {
   dispatch: (action: A, state: S) => void;
@@ -41,7 +42,7 @@ export const useReduxDevtools = <S, A>(
         return;
       }
 
-      connectionRef.current = getConnectionById(payload.connectionsPool, connectionRef.current.id);
+      connectionRef.current = getConnection(connectionRef.current.id);
       unsubscribe.current = subscribe();
       connectionRef.current?.send({ type: '@@RECONNECT' }, noneReactiveState.current);
     },

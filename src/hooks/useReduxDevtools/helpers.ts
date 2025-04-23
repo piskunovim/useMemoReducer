@@ -1,11 +1,12 @@
 import { disconnectObserver } from './DisconnectObserver';
+import { createConnectionModule } from './connectionModule';
 
-import { addConnection, removeConnection, createConnectionsPool, ConnectionWithId } from './connections';
+import { ConnectionWithId } from './connectionModule';
 
-let connectionsPool = createConnectionsPool();
+const { addConnection, removeConnection, getConnectionById } = createConnectionModule();
 
 export function connect(id: string, state: unknown): null | ConnectionWithId {
-  const result = addConnection(connectionsPool, id);
+  const result = addConnection(id);
 
   if (!result.connection) {
     if (id) {
@@ -17,15 +18,13 @@ export function connect(id: string, state: unknown): null | ConnectionWithId {
 
   result.connection.init(state);
 
-  connectionsPool = result.connectionsPool;
-
-  console.log('After connect', { connectionsPool });
+  console.log('After connect', { connectionsPool: result.connectionsPool });
 
   return result.connection;
 }
 
 export function disconnect(connection: ConnectionWithId | null): void {
-  const result = removeConnection(connectionsPool, connection);
+  const result = removeConnection(connection);
 
   if (!result.connection) {
     console.warn(`[useReduxDevtools] Connection was not removed.`);
@@ -33,11 +32,13 @@ export function disconnect(connection: ConnectionWithId | null): void {
     return;
   }
 
-  connectionsPool = result.connectionsPool;
-
-  console.log('After remove', { connectionsPool });
+  console.log('After remove', { connectionsPool: result.connectionsPool });
 
   disconnectObserver.emit(result);
+}
+
+export function getConnection(uniqueId: string): ConnectionWithId {
+  return getConnectionById(uniqueId);
 }
 
 export function isExist(connection: ConnectionWithId | null): connection is ConnectionWithId {
