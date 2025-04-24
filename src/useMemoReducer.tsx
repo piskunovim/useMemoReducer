@@ -1,4 +1,4 @@
-import { Reducer, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
+import { Reducer, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
 import {
   useCurrentSelector as currentSelector,
@@ -10,12 +10,23 @@ import {
 import { Dispatch, ThunkAction, Subscriber, Subscribers, UseSelector } from './models';
 import { isThunk } from './helpers';
 import { UseMemoReducerOptions } from './hooks/useReduxDevtools/models';
+import { Log } from './utils/Log';
 
 export const useMemoReducer = <S, A>(
   reducer: Reducer<S, A>,
   initialState: S,
   options?: UseMemoReducerOptions,
 ): [UseSelector<S>, Dispatch<S, A>] => {
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   /**
    * We must set these values only once
    */
@@ -31,17 +42,40 @@ export const useMemoReducer = <S, A>(
   // @ts-expect-error ts(2322)
   const enhancedDispatch: Dispatch<S, A> = useCallback(
     (action: A | ThunkAction<S, A>) => {
+      if (!isMounted.current) {
+        Log.warn('You are trying to dispatch an action after the component was unmounted');
+
+        return;
+      }
+
       if (isThunk<S, A>(action)) {
         return action(enhancedDispatch, getState);
       }
 
-      const newState = cachedReducer(noneReactiveState.current, action);
+      let wasCalled = false;
 
-      devtools.dispatch(action, newState);
+      return setState((prevState) => {
+        if (!isMounted.current) {
+          Log.warn('You are trying to dispatch an action after the component was unmounted');
 
-      return setState(newState);
+          return prevState;
+        }
+
+        const nextState = cachedReducer(prevState, action);
+
+        if (Object.is(prevState, nextState)) {
+          return prevState;
+        }
+
+        if (!wasCalled) {
+          wasCalled = true;
+          devtools.dispatch(action, nextState);
+        }
+
+        return nextState;
+      });
     },
-    [cachedReducer, noneReactiveState, devtools, setState, getState],
+    [cachedReducer, devtools, setState, getState],
   );
 
   const subscribersRef = useRef<Subscribers<S>>(new Set([]));
