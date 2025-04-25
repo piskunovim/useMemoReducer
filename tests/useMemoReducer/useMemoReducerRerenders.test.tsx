@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { useEffect } from 'react';
+import { renderHook, act } from '@testing-library/react';
 import { useMemoReducer } from '../../src';
 import { Log } from '../../src/utils/Log';
 
@@ -100,7 +100,7 @@ describe('useMemoReducerRerenders', () => {
     expect(personRenderSpy).toHaveBeenCalledTimes(1);
   });
 
-  test('should work correctly with cuncurrent state changes', () => {
+  test('should work correctly with concurrent state changes', () => {
     const { result } = renderUseMemoReducer();
 
     expect(result.current.counter).toBe(0);
