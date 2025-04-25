@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { renderHook, act } from '@testing-library/react';
-import { useMemoReducer } from '../../src';
+import { renderHook, act, waitFor } from '@testing-library/react';
+import { ThunkAction, useMemoReducer } from '../../src';
 import { Log } from '../../src/utils/Log';
 
 type State = {
@@ -31,6 +31,18 @@ const dispatchRenderSpy = jest.fn();
 const counterRenderSpy = jest.fn();
 const personRenderSpy = jest.fn();
 
+const delay = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const getStateInsideThunkMock = jest.fn();
+const asyncThunk: ThunkAction<State, CounterAction> = async (dispatch, getState) => {
+  getStateInsideThunkMock(getState());
+  dispatch({ type: 'incrementCounter' });
+  dispatch({ type: 'incrementCounter' });
+  await delay();
+  getStateInsideThunkMock(getState());
+  dispatch({ type: 'incrementCounter' });
+};
+
 const renderUseMemoReducer = (config = { reactStrictMode: false }) => {
   const render = renderHook(() => {
     const [useSelector, dispatch] = useMemoReducer(counterReducer, {
@@ -50,7 +62,7 @@ const renderUseMemoReducer = (config = { reactStrictMode: false }) => {
     }, [dispatch]);
 
     useEffect(() => {
-      counterRenderSpy();
+      counterRenderSpy(counter);
     }, [counter]);
 
     useEffect(() => {
@@ -146,6 +158,71 @@ describe('useMemoReducerRerenders', () => {
     expect(dispatchRenderSpy).toHaveBeenCalledTimes(2);
     expect(counterRenderSpy).toHaveBeenCalledTimes(3);
     expect(personRenderSpy).toHaveBeenCalledTimes(3);
+  });
+
+  test('should work correctly with async thunk', async () => {
+    const { result } = renderUseMemoReducer();
+
+    expect(result.current.counter).toBe(0);
+    expect(result.current.person.age).toBe(100);
+
+    await act(async () => {
+      result.current.dispatch(asyncThunk);
+    });
+
+    await waitFor(() => {
+      expect(result.current.counter).toBe(3);
+      expect(result.current.person.age).toBe(100);
+
+      expect(getStateInsideThunkMock).toHaveBeenCalledTimes(2);
+      expect(getStateInsideThunkMock).toHaveBeenCalledWith({ counter: 0, person: { name: 'John Doe', age: 100 } });
+      expect(getStateInsideThunkMock).toHaveBeenCalledWith({ counter: 2, person: { name: 'John Doe', age: 100 } });
+
+      expect(useSelectorRenderSpy).toHaveBeenCalledTimes(1);
+      expect(dispatchRenderSpy).toHaveBeenCalledTimes(1);
+      expect(personRenderSpy).toHaveBeenCalledTimes(1);
+
+      expect(counterRenderSpy).toHaveBeenCalledTimes(3);
+      expect(counterRenderSpy).toHaveBeenCalledWith(0);
+      expect(counterRenderSpy).toHaveBeenCalledWith(2);
+      expect(counterRenderSpy).toHaveBeenCalledWith(3);
+    });
+  });
+
+  test('should work correctly with concurrent state changes with async thunk', async () => {
+    const { result } = renderUseMemoReducer();
+
+    expect(result.current.counter).toBe(0);
+    expect(result.current.person.age).toBe(100);
+
+    await act(async () => {
+      result.current.dispatch(asyncThunk);
+      result.current.dispatch({ type: 'incrementCounter' });
+      result.current.dispatch({ type: 'makeYounger' });
+      result.current.dispatch({ type: 'incrementCounter' });
+      result.current.dispatch({ type: 'makeYounger' });
+      result.current.dispatch({ type: 'makeYounger' });
+      result.current.dispatch({ type: 'incrementCounter' });
+    });
+
+    await waitFor(() => {
+      expect(result.current.counter).toBe(6);
+      expect(result.current.person.age).toBe(70);
+
+      expect(getStateInsideThunkMock).toHaveBeenCalledTimes(2);
+      expect(getStateInsideThunkMock).toHaveBeenCalledWith({ counter: 0, person: { name: 'John Doe', age: 100 } });
+      expect(getStateInsideThunkMock).toHaveBeenCalledWith({ counter: 5, person: { name: 'John Doe', age: 70 } });
+
+      expect(useSelectorRenderSpy).toHaveBeenCalledTimes(1);
+      expect(dispatchRenderSpy).toHaveBeenCalledTimes(1);
+
+      expect(counterRenderSpy).toHaveBeenCalledTimes(3);
+      expect(counterRenderSpy).toHaveBeenCalledWith(0);
+      expect(counterRenderSpy).toHaveBeenCalledWith(5);
+      expect(counterRenderSpy).toHaveBeenCalledWith(6);
+
+      expect(personRenderSpy).toHaveBeenCalledTimes(2);
+    });
   });
 
   test('should correctly unmount', async () => {
