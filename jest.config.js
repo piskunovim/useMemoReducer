@@ -1,8 +1,10 @@
-const enableDevtoolsCoverage = process.env.REDUX_DEVTOOLS_COVERAGE === 'true';
+const isDevelopmentCoverage = process.env.NODE_ENV === 'development';
 
 module.exports = {
   testEnvironment: 'jsdom',
   collectCoverage: true,
   coverageReporters: ['text', 'json', 'lcov'],
-  coveragePathIgnorePatterns: enableDevtoolsCoverage ? [] : ['src/hooks/useReduxDevtools'],
+  coveragePathIgnorePatterns: isDevelopmentCoverage
+    ? []
+    : ['src/hooks/useReduxDevtools', 'src/hooks/useTimeline', 'src/utils/Log', 'tests'],
 };
