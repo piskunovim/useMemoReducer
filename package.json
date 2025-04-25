@@ -1,8 +1,9 @@
 {
   "name": "use-memo-reducer",
-  "version": "0.7.11",
+  "version": "0.7.12",
   "description": "A custom React hook for memoized reducers",
   "main": "dist/index.js",
+  "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
   "repository": "github:piskunovim/useMemoReducer",
   "scripts": {
@@ -38,6 +39,12 @@
       "limit": "10 KB"
     }
   ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js"
+    }
+  },
   "lint-staged": {
     "*.{ts,tsx}": [
       "eslint --fix",
