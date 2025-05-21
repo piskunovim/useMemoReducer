@@ -1,130 +1,244 @@
-import React from 'react';
-import { fireEvent, render } from '@testing-library/react';
+import { useEffect } from 'react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 
-import {
-  SimpleComponent,
-  COUNT_VALUE_SELECTOR,
-  CHANGE_OBJECT_SELECTOR,
-  DECREMENT_SELECTOR,
-  INCREMENT_SELECTOR,
-  OBJECT_VALUE_SELECTOR,
-  CURENT_RENDERS_COUNT_SELECTOR,
-  ALL_RENDERS_COUNT_SELECTOR,
-} from './SimpleComponent';
-import {
-  COUNTER_CURENT_RENDERS_COUNT_SELECTOR,
-  ComponentWithContext,
-  OBJECT_VIEWER_CURENT_RENDERS_COUNT_SELECTOR,
-} from './ComponentWithContext';
+import { Log } from '../../src/utils/Log';
+import { ThunkAction, useMemoReducer } from '../../src';
 
-describe('useMemoReducer', () => {
-  it('should initialize correctly', () => {
-    const { getByTestId } = render(<SimpleComponent />);
-    const countValue = getByTestId(COUNT_VALUE_SELECTOR);
-    const objectValue = getByTestId(OBJECT_VALUE_SELECTOR);
+type State = {
+  counter: number;
+  person: {
+    name: string;
+    age: number;
+  };
+};
 
-    expect(countValue.textContent).toBe('0');
-    expect(objectValue.textContent).toBe(JSON.stringify({ value: 'Some value' }));
+type CounterAction = { type: 'incrementCounter' } | { type: 'decrementCounter' } | { type: 'makeYounger' };
+
+const counterReducer = (state: State, action: CounterAction): State => {
+  switch (action.type) {
+    case 'incrementCounter':
+      return { ...state, counter: state.counter + 1 };
+    case 'decrementCounter':
+      return { ...state, counter: state.counter - 1 };
+    case 'makeYounger':
+      return { ...state, person: { ...state.person, age: state.person.age - 10 } };
+    default:
+      return state;
+  }
+};
+
+const useSelectorRenderSpy = jest.fn();
+const dispatchRenderSpy = jest.fn();
+const counterRenderSpy = jest.fn();
+const personRenderSpy = jest.fn();
+
+const delay = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const getStateInsideThunkMock = jest.fn();
+const asyncThunk: ThunkAction<State, CounterAction> = async (dispatch, getState) => {
+  getStateInsideThunkMock(getState());
+  dispatch({ type: 'incrementCounter' });
+  dispatch({ type: 'incrementCounter' });
+  await delay();
+  getStateInsideThunkMock(getState());
+  dispatch({ type: 'incrementCounter' });
+};
+
+const renderUseMemoReducer = (config = { reactStrictMode: false }) => {
+  const render = renderHook(() => {
+    const [useSelector, dispatch] = useMemoReducer(counterReducer, {
+      counter: 0,
+      person: { name: 'John Doe', age: 100 },
+    });
+
+    const counter = useSelector((state: State) => state.counter);
+    const person = useSelector((state: State) => state.person);
+
+    useEffect(() => {
+      useSelectorRenderSpy();
+    }, [useSelector]);
+
+    useEffect(() => {
+      dispatchRenderSpy();
+    }, [dispatch]);
+
+    useEffect(() => {
+      counterRenderSpy(counter);
+    }, [counter]);
+
+    useEffect(() => {
+      personRenderSpy();
+    }, [person]);
+
+    return {
+      counter,
+      person,
+      dispatch,
+    };
+  }, config);
+
+  return render;
+};
+
+describe('useMemoReducerRerenders', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
   });
 
-  it('should handle increment and decrement correctly', () => {
-    const { getByTestId } = render(<SimpleComponent />);
-    const decrementButton = getByTestId(DECREMENT_SELECTOR);
-    const incrementButton = getByTestId(INCREMENT_SELECTOR);
-    const countValue = getByTestId(COUNT_VALUE_SELECTOR);
+  test('should initialize state', () => {
+    const { result } = renderUseMemoReducer();
 
-    expect(countValue.textContent).toBe('0');
+    expect(result.current.counter).toBe(0);
 
-    fireEvent.click(incrementButton);
-    fireEvent.click(incrementButton);
-    expect(countValue.textContent).toBe('2');
-
-    fireEvent.click(decrementButton);
-    expect(countValue.textContent).toBe('1');
+    expect(useSelectorRenderSpy).toHaveBeenCalledTimes(1);
+    expect(dispatchRenderSpy).toHaveBeenCalledTimes(1);
+    expect(counterRenderSpy).toHaveBeenCalledTimes(1);
+    expect(personRenderSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('should have the correct state after multiple different actions', () => {
-    const { getByTestId } = render(<SimpleComponent />);
-    const decrementButton = getByTestId(DECREMENT_SELECTOR);
-    const incrementButton = getByTestId(INCREMENT_SELECTOR);
-    const countValue = getByTestId('count-value');
+  test('should call useEffect only for changed state', () => {
+    const { result } = renderUseMemoReducer();
 
-    fireEvent.click(incrementButton);
-    fireEvent.click(incrementButton);
-    fireEvent.click(decrementButton);
-    fireEvent.click(incrementButton);
-    fireEvent.click(decrementButton);
+    expect(result.current.counter).toBe(0);
 
-    expect(countValue.textContent).toBe('1');
+    act(() => {
+      result.current.dispatch({ type: 'incrementCounter' });
+    });
+
+    expect(result.current.counter).toBe(1);
+
+    expect(useSelectorRenderSpy).toHaveBeenCalledTimes(1);
+    expect(dispatchRenderSpy).toHaveBeenCalledTimes(1);
+    expect(counterRenderSpy).toHaveBeenCalledTimes(2);
+    expect(personRenderSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('shouldn`t fire a useEffect correctly when a part of the state wasn`t changed', () => {
-    const { getByTestId } = render(<SimpleComponent />);
-    const incrementButton = getByTestId(INCREMENT_SELECTOR);
-    const decrementButton = getByTestId(DECREMENT_SELECTOR);
-    const allRendersCount = getByTestId(ALL_RENDERS_COUNT_SELECTOR);
-    const currentRendersCount = getByTestId(CURENT_RENDERS_COUNT_SELECTOR);
-    const countValue = getByTestId(COUNT_VALUE_SELECTOR);
-    const objectValue = getByTestId(OBJECT_VALUE_SELECTOR);
-    const initialAllRenders = allRendersCount.textContent;
+  test('should work correctly with concurrent state changes', () => {
+    const { result } = renderUseMemoReducer();
 
-    expect(initialAllRenders).toBe('1');
+    expect(result.current.counter).toBe(0);
+    expect(result.current.person.age).toBe(100);
 
-    fireEvent.click(incrementButton);
-    fireEvent.click(incrementButton);
-    fireEvent.click(incrementButton);
-    fireEvent.click(decrementButton);
+    act(() => {
+      result.current.dispatch({ type: 'incrementCounter' });
+      result.current.dispatch({ type: 'makeYounger' });
+      result.current.dispatch({ type: 'incrementCounter' });
+      result.current.dispatch({ type: 'makeYounger' });
+      result.current.dispatch({ type: 'makeYounger' });
+      result.current.dispatch({ type: 'incrementCounter' });
+    });
 
-    expect(currentRendersCount.textContent).toBe('0');
-    expect(allRendersCount.textContent).toBe('5');
-    expect(countValue.textContent).toBe('2');
-    expect(objectValue.textContent).toBe(JSON.stringify({ value: 'Some value' }));
+    expect(result.current.counter).toBe(3);
+    expect(result.current.person.age).toBe(70);
+
+    expect(useSelectorRenderSpy).toHaveBeenCalledTimes(1);
+    expect(dispatchRenderSpy).toHaveBeenCalledTimes(1);
+    expect(counterRenderSpy).toHaveBeenCalledTimes(2);
+    expect(personRenderSpy).toHaveBeenCalledTimes(2);
   });
 
-  it('should fire a useEffect correctly when a part of the state was changed', () => {
-    const { getByTestId } = render(<SimpleComponent />);
-    const changeObjectButton = getByTestId(CHANGE_OBJECT_SELECTOR);
-    const allRendersCount = getByTestId(ALL_RENDERS_COUNT_SELECTOR);
-    const currentRendersCount = getByTestId(CURENT_RENDERS_COUNT_SELECTOR);
-    const objectValue = getByTestId(OBJECT_VALUE_SELECTOR);
-    const initialAllRenders = allRendersCount.textContent;
-    const initialCurrentRenders = currentRendersCount.textContent;
+  test('should work correctly in strict mode', () => {
+    const { result } = renderUseMemoReducer({ reactStrictMode: true });
 
-    expect(initialAllRenders).toBe('1');
-    expect(initialCurrentRenders).toBe('0');
+    expect(result.current.counter).toBe(0);
+    expect(result.current.person.age).toBe(100);
 
-    fireEvent.click(changeObjectButton);
-    fireEvent.click(changeObjectButton);
+    act(() => {
+      result.current.dispatch({ type: 'incrementCounter' });
+      result.current.dispatch({ type: 'makeYounger' });
+      result.current.dispatch({ type: 'incrementCounter' });
+      result.current.dispatch({ type: 'makeYounger' });
+      result.current.dispatch({ type: 'makeYounger' });
+      result.current.dispatch({ type: 'incrementCounter' });
+    });
 
-    expect(allRendersCount.textContent).toBe('3');
-    expect(currentRendersCount.textContent).toBe('2');
-    expect(objectValue.textContent).toBe(JSON.stringify({ value: 'Some value changed' }));
+    expect(result.current.counter).toBe(3);
+    expect(result.current.person.age).toBe(70);
+
+    expect(useSelectorRenderSpy).toHaveBeenCalledTimes(2);
+    expect(dispatchRenderSpy).toHaveBeenCalledTimes(2);
+    expect(counterRenderSpy).toHaveBeenCalledTimes(3);
+    expect(personRenderSpy).toHaveBeenCalledTimes(3);
   });
-});
 
-describe('useMemoReducer with with the ContextApi', () => {
-  it('should rerender only a component which data was changed', () => {
-    const { getByTestId } = render(<ComponentWithContext />);
-    const incrementButton = getByTestId(INCREMENT_SELECTOR);
-    const decrementButton = getByTestId(DECREMENT_SELECTOR);
-    const counterCurrentRendersCount = getByTestId(COUNTER_CURENT_RENDERS_COUNT_SELECTOR);
-    const objectViewerCurrentRendersCount = getByTestId(OBJECT_VIEWER_CURENT_RENDERS_COUNT_SELECTOR);
-    const countValue = getByTestId(COUNT_VALUE_SELECTOR);
-    const objectValue = getByTestId(OBJECT_VALUE_SELECTOR);
-    const initialCounterCurrentRenders = counterCurrentRendersCount.textContent;
-    const initialObjectViewerCounterCurrentRenders = objectViewerCurrentRendersCount.textContent;
+  test('should work correctly with async thunk', async () => {
+    const { result } = renderUseMemoReducer();
 
-    expect(initialCounterCurrentRenders).toBe('0');
-    expect(initialObjectViewerCounterCurrentRenders).toBe('0');
+    expect(result.current.counter).toBe(0);
+    expect(result.current.person.age).toBe(100);
 
-    fireEvent.click(incrementButton);
-    fireEvent.click(incrementButton);
-    fireEvent.click(incrementButton);
-    fireEvent.click(decrementButton);
+    await act(async () => {
+      result.current.dispatch(asyncThunk);
+    });
 
-    expect(counterCurrentRendersCount.textContent).toBe('4');
-    expect(objectViewerCurrentRendersCount.textContent).toBe('0');
-    expect(countValue.textContent).toBe('2');
-    expect(objectValue.textContent).toBe(JSON.stringify({ value: 'Some value' }));
+    await waitFor(() => {
+      expect(result.current.counter).toBe(3);
+      expect(result.current.person.age).toBe(100);
+
+      expect(getStateInsideThunkMock).toHaveBeenCalledTimes(2);
+      expect(getStateInsideThunkMock).toHaveBeenCalledWith({ counter: 0, person: { name: 'John Doe', age: 100 } });
+      expect(getStateInsideThunkMock).toHaveBeenCalledWith({ counter: 2, person: { name: 'John Doe', age: 100 } });
+
+      expect(useSelectorRenderSpy).toHaveBeenCalledTimes(1);
+      expect(dispatchRenderSpy).toHaveBeenCalledTimes(1);
+      expect(personRenderSpy).toHaveBeenCalledTimes(1);
+
+      expect(counterRenderSpy).toHaveBeenCalledTimes(3);
+      expect(counterRenderSpy).toHaveBeenCalledWith(0);
+      expect(counterRenderSpy).toHaveBeenCalledWith(2);
+      expect(counterRenderSpy).toHaveBeenCalledWith(3);
+    });
+  });
+
+  test('should work correctly with concurrent state changes with async thunk', async () => {
+    const { result } = renderUseMemoReducer();
+
+    expect(result.current.counter).toBe(0);
+    expect(result.current.person.age).toBe(100);
+
+    await act(async () => {
+      result.current.dispatch(asyncThunk);
+      result.current.dispatch({ type: 'incrementCounter' });
+      result.current.dispatch({ type: 'makeYounger' });
+      result.current.dispatch({ type: 'incrementCounter' });
+      result.current.dispatch({ type: 'makeYounger' });
+      result.current.dispatch({ type: 'makeYounger' });
+      result.current.dispatch({ type: 'incrementCounter' });
+    });
+
+    await waitFor(() => {
+      expect(result.current.counter).toBe(6);
+      expect(result.current.person.age).toBe(70);
+
+      expect(getStateInsideThunkMock).toHaveBeenCalledTimes(2);
+      expect(getStateInsideThunkMock).toHaveBeenCalledWith({ counter: 0, person: { name: 'John Doe', age: 100 } });
+      expect(getStateInsideThunkMock).toHaveBeenCalledWith({ counter: 5, person: { name: 'John Doe', age: 70 } });
+
+      expect(useSelectorRenderSpy).toHaveBeenCalledTimes(1);
+      expect(dispatchRenderSpy).toHaveBeenCalledTimes(1);
+
+      expect(counterRenderSpy).toHaveBeenCalledTimes(3);
+      expect(counterRenderSpy).toHaveBeenCalledWith(0);
+      expect(counterRenderSpy).toHaveBeenCalledWith(5);
+      expect(counterRenderSpy).toHaveBeenCalledWith(6);
+
+      expect(personRenderSpy).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  test('should correctly unmount', async () => {
+    const consoleErrorSpy = jest.spyOn(Log, 'warn');
+
+    const { result, unmount } = renderUseMemoReducer({ reactStrictMode: true });
+
+    unmount();
+
+    act(() => {
+      result.current.dispatch({ type: 'incrementCounter' });
+    });
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('You are trying to dispatch an action after the component was unmounted'),
+    );
   });
 });

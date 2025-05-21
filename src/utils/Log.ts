@@ -1,5 +1,6 @@
 import { isDevEnvironment } from './helpers';
 
+// istanbul ignore file
 export class Log {
   static warn(message: string) {
     Log.exec(`[WARN] ${message}`, 'warn');

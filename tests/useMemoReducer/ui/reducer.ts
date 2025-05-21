@@ -1,15 +1,11 @@
-import { ThunkAction } from '../../src';
+import { ThunkAction } from '../../../src';
 
 export enum Action {
   INCREMENT = 'INCREMENT',
   DECREMENT = 'DECREMENT',
-  OBJECT_VALUE_CHANGED = 'OBJECT_VALUE_CHANGED',
 }
 
-export type Actions =
-  | { type: Action.INCREMENT }
-  | { type: Action.DECREMENT }
-  | { type: Action.OBJECT_VALUE_CHANGED; value: string };
+export type Actions = { type: Action.INCREMENT } | { type: Action.DECREMENT };
 
 export type State = {
   count: number;
@@ -29,8 +25,7 @@ export const reducer = (state: State, action: Actions) => {
       return { ...state, count: state.count + 1 };
     case Action.DECREMENT:
       return { ...state, count: state.count - 1 };
-    case Action.OBJECT_VALUE_CHANGED:
-      return { ...state, object: { ...state.object, value: action.value } };
+    /* istanbul ignore next */
     default:
       return state;
   }
