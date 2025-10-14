@@ -1,124 +1,46 @@
-import { REDUX_DEVTOOLS_KEY } from './constants';
 import { disconnectObserver } from './DisconnectObserver';
-import {
-  ReduxDevtoolsExtension,
-  ReduxDevtoolsExtensionConnection,
-  WindowWithDevTools,
-  UseMemoReducerOptions,
-} from './models';
+import { createConnectionModule } from './connectionModule';
 
-const getDevtoolsExtenstion = (arg: Window | WindowWithDevTools): false | ReduxDevtoolsExtension =>
-  REDUX_DEVTOOLS_KEY in arg && (arg as WindowWithDevTools)[REDUX_DEVTOOLS_KEY];
+import { ConnectionWithId } from './connectionModule';
 
-const getUniqueName = (name: string) => `[useMemoReducer] ${name}`;
+const { addConnection, removeConnection, getConnectionById } = createConnectionModule();
 
-export const withDevTools = (name: string): false | ReduxDevtoolsExtension =>
-  process.env.NODE_ENV === 'development' &&
-  name !== '' &&
-  typeof window !== 'undefined' &&
-  getDevtoolsExtenstion(window);
+export function connect(id: string, state: unknown): null | ConnectionWithId {
+  const result = addConnection(id);
 
-const createConnection = (
-  devtoolsExt: false | ReduxDevtoolsExtension,
-  name: string,
-): null | ReduxDevtoolsExtensionConnection => {
-  if (!devtoolsExt) {
-    return null;
+  if (!result.connection) {
+    if (id) {
+      console.warn(`[useReduxDevtools] Connection ${id} was not created.`);
+    }
+
+    return result.connection;
   }
 
-  return devtoolsExt.connect({ name: getUniqueName(name), trace: true, instanceId: getUniqueName(name) });
-};
+  result.connection.init(state);
 
-const getStackTrace = (): string => {
-  const obj: { stack?: string } = {};
-  Error.captureStackTrace(obj, getStackTrace);
+  console.log('After connect', { connectionsPool: result.connectionsPool });
 
-  return obj?.stack ?? '';
-};
+  return result.connection;
+}
 
-const connections = new Map<string, ReduxDevtoolsExtensionConnection[]>([]);
+export function disconnect(connection: ConnectionWithId | null): void {
+  const result = removeConnection(connection);
 
-const parseConnectionName = (connectionName: string): [string, number] => {
-  const [name, number] = connectionName.split('/') as [string, number];
-
-  return [name, number - 1];
-};
-
-export const getConnectionName = (options?: UseMemoReducerOptions): string => {
-  if (!options?.devtoolsName) {
-    return '';
-  }
-
-  const devtoolsName = options.devtoolsName.toLowerCase();
-
-  const connectionsByName = connections.get(devtoolsName) ?? [];
-  const currentVersion = connectionsByName.length > 0 ? connectionsByName.length + 1 : 1;
-
-  return `${devtoolsName}/${currentVersion}`;
-};
-
-const removeConnection = (connectionName: string): void => {
-  const [name, index] = parseConnectionName(connectionName);
-
-  const connectionsByName = connections.get(name) ?? [];
-  const currentConnection = connectionsByName[index];
-
-  if (!currentConnection) {
-    console.warn(`[useMemoReducer] Connection ${connectionName} is not exists`);
+  if (!result.connection) {
+    console.warn(`[useReduxDevtools] Connection was not removed.`);
 
     return;
   }
 
-  const newConnections = connectionsByName.filter((_, idx) => idx !== index);
+  console.log('After remove', { connectionsPool: result.connectionsPool });
 
-  if (newConnections.length === 0) {
-    connections.delete(name);
-  } else {
-    connections.set(name, newConnections);
-  }
-};
+  disconnectObserver.emit(result);
+}
 
-export const isDevtoolsExist = (connectionName: string): false | ReduxDevtoolsExtension => {
-  return connectionName !== '' && withDevTools(connectionName);
-};
+export function getConnection(uniqueId: string): ConnectionWithId {
+  return getConnectionById(uniqueId);
+}
 
-export const connect = (connectionName: string, state: unknown): null | ReduxDevtoolsExtensionConnection => {
-  const [name, index] = parseConnectionName(connectionName);
-
-  const connectionsByName = connections.get(name) ?? [];
-  const currentConnection = connectionsByName[index];
-
-  if (currentConnection) {
-    return currentConnection;
-  }
-
-  const newConnection = createConnection(withDevTools(connectionName), connectionName);
-
-  if (!newConnection) {
-    console.warn(`[useReduxDevtools] Connection ${connectionName} was not created.`);
-
-    return null;
-  }
-
-  connections.set(name, [...connectionsByName, newConnection]);
-  newConnection.init(state);
-
-  return newConnection;
-};
-
-export const disconnect = (connectionName: string): void => {
-  removeConnection(connectionName);
-
-  const devtoolsExt = withDevTools(connectionName);
-
-  if (devtoolsExt) {
-    devtoolsExt.disconnect();
-    disconnectObserver.emit();
-  }
-};
-
-export const isEnabled = (connectionName: string): boolean => {
-  const [name, number] = parseConnectionName(connectionName);
-
-  return typeof connections.get(name)?.[number] !== 'undefined';
-};
+export function isExist(connection: ConnectionWithId | null): connection is ConnectionWithId {
+  return !!connection;
+}

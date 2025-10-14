@@ -1,7 +1,9 @@
-type Observer = () => void;
+import { Return } from './connectionModule';
+
+type Observer = (payload: Return) => void;
 
 class DisconnectObserver {
-  private observers: Observer[] = [];
+  private readonly observers: Observer[] = [];
 
   subscribe(observer: Observer): void {
     this.observers.push(observer);
@@ -15,8 +17,8 @@ class DisconnectObserver {
     }
   }
 
-  emit(): void {
-    this.observers.forEach((observer) => observer());
+  emit(payload: Return): void {
+    this.observers.forEach((observer) => observer(payload));
   }
 }
 

@@ -1,43 +1,53 @@
 /* eslint-disable react-hooks/rules-of-hooks */
-import { Reducer, useCallback, useEffect, useMemo, useRef } from 'react';
+import { MutableRefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
+import { connect, disconnect, getConnection, isExist } from './helpers';
 import { disconnectObserver } from './DisconnectObserver';
-import { connect, disconnect, getConnectionName, isDevtoolsExist, isEnabled } from './helpers';
-import { ReduxDevtoolsExtension, UseMemoReducerOptions } from './models';
+import { ReduxDevtoolsExtensionConnection, UseMemoReducerOptions } from './models';
 
-type ReturnType<A> = { devtoolsEnabled: () => boolean; dispatchToDevtools?: (action: A) => void };
+import { ConnectionWithId, Return } from './connectionModule';
 
-const useReduxDevtools = <S, A>(
-  reducer: Reducer<S, A>,
-  initialState: S,
-  connectionName: string,
-  devtoolsExist: boolean | ReduxDevtoolsExtension,
-): ReturnType<A> => {
-  const devtoolsReducerRef = useRef(reducer(initialState, { type: '@@INIT' } as unknown as A));
-  const connection = useMemo(
-    () => (devtoolsExist ? connect(connectionName, devtoolsReducerRef.current) : null),
-    [connectionName, devtoolsExist],
-  );
+type ReturnType<A, S> = {
+  dispatch: (action: A, state: S) => void;
+  connection: ReduxDevtoolsExtensionConnection | null;
+};
 
-  if (!connection) {
-    return { devtoolsEnabled: () => false };
-  }
+export const useReduxDevtools = <S, A>(
+  noneReactiveState: MutableRefObject<S>,
+  options?: UseMemoReducerOptions,
+  listeners?: (change: unknown) => void,
+): ReturnType<A, S> => {
+  const connectionRef = useRef<ConnectionWithId | null>(null);
+  useLayoutEffect(() => {
+    connectionRef.current = connect(options?.id ?? '', noneReactiveState.current);
+  }, [noneReactiveState, options?.id]);
+
+  const onListenersRef = useRef(listeners);
+  onListenersRef.current = listeners;
 
   const unsubscribe = useRef<() => void | null>();
 
   const subscribe = useCallback(() => {
+    console.log('SUBSCRIBE...', { connection: connectionRef.current, onListenersRef });
+
     unsubscribe.current?.();
 
-    return connection?.subscribe((message) => {
-      // Implement monitors actions.
-      // For example time traveling:
-    });
-  }, [connection]);
+    return connectionRef.current?.subscribe(onListenersRef.current);
+  }, []);
 
-  const reconnect = useCallback(() => {
-    connection?.send({ type: '@@RECONNECT' }, devtoolsReducerRef.current);
-    unsubscribe.current = subscribe();
-  }, [connection, subscribe]);
+  const reconnect = useCallback(
+    (payload: Return) => {
+      console.log('RECONNECT...', { connection: connectionRef.current, payload });
+      if (!isExist(connectionRef.current)) {
+        return;
+      }
+
+      connectionRef.current = getConnection(connectionRef.current.id);
+      unsubscribe.current = subscribe();
+      connectionRef.current?.send({ type: '@@RECONNECT' }, noneReactiveState.current);
+    },
+    [noneReactiveState, subscribe],
+  );
 
   useEffect(() => {
     disconnectObserver.subscribe(reconnect);
@@ -48,36 +58,25 @@ const useReduxDevtools = <S, A>(
   }, [reconnect]);
 
   useEffect(() => {
+    if (!isExist(connectionRef.current)) {
+      return;
+    }
+
     unsubscribe.current = subscribe();
 
     return () => {
+      if (!isExist(connectionRef.current)) {
+        return;
+      }
+
       unsubscribe.current?.();
-      disconnect(connectionName);
+      disconnect(connectionRef.current);
     };
-  }, [connectionName, subscribe]);
+  }, [subscribe]);
 
-  const dispatchToDevtools = useCallback(
-    (action: A) => {
-      devtoolsReducerRef.current = reducer(devtoolsReducerRef.current, action);
-      connection?.send(action, devtoolsReducerRef.current);
-    },
-    [connection, reducer],
-  );
+  const dispatch = useCallback((action: A, state: S) => {
+    connectionRef.current?.send(action, state);
+  }, []);
 
-  const devtoolsEnabled = useCallback(() => {
-    return isEnabled(connectionName);
-  }, [connectionName]);
-
-  return useMemo(() => ({ devtoolsEnabled, dispatchToDevtools }), [devtoolsEnabled, dispatchToDevtools]);
-};
-
-export const useCreateReduxDevtools = <S, A, O>(
-  reducer: Reducer<S, A>,
-  initialState: S,
-  options?: O,
-): ReturnType<A> => {
-  const memoizedInitialState = useRef(initialState);
-  const connectionName = useMemo(() => getConnectionName(options as UseMemoReducerOptions), []);
-
-  return useReduxDevtools(reducer, memoizedInitialState.current, connectionName, isDevtoolsExist(connectionName));
+  return useMemo(() => ({ dispatch, connection: connectionRef.current }), [dispatch]);
 };

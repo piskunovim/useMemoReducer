@@ -1,4 +1,4 @@
-// @ts-ignore
+// @ts-expect-error ts(2307)
 import { EnhancerOptions } from 'redux-devtools-extension';
 
 import { ReduxDevtoolsExtensionConnection } from './ReduxDevtoolsExtensionConnection';

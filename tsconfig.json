@@ -11,6 +11,6 @@
     "declarationMap": true,
     "outDir": "./dist"
   },
-  "include": ["src/**/*"],
-  "exclude": ["test"]
+  "include": ["**/*"],
+  "exclude": [".tests/**/*", "./dist/**/*"]
 }
