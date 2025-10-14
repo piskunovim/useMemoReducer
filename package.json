@@ -1,6 +1,6 @@
 {
   "name": "use-memo-reducer",
-  "version": "0.7.12",
+  "version": "1.0.0-next.0",
   "description": "A custom React hook for memoized reducers",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
